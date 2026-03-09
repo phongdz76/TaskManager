@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { sendPasswordResetEmail } from "../config/mailer.js";
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -16,6 +17,9 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // one uppercase letter, one lowercase letter, one special character
 const PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+
+const PASSWORD_MESSAGE =
+  "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, and a special character";
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -163,10 +167,8 @@ export const forgotPassword = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      // Trả 200 để không lộ thông tin email có tồn tại hay không
-      return res.status(200).json({
-        message:
-          "If that email is registered, a password reset link has been sent",
+      return res.status(404).json({
+        message: "No account found with this email address",
       });
     }
 
@@ -178,11 +180,13 @@ export const forgotPassword = async (req, res) => {
       { expiresIn: "15m" },
     );
 
-    // Production: gửi resetToken qua email dưới dạng link
-    // Development: trả về token trực tiếp để test
+    // Gửi email chứa link reset password đến người dùng
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+    await sendPasswordResetEmail(user.email, resetUrl);
+
     res.status(200).json({
-      message: "Password reset token generated",
-      resetToken, // TODO: xóa dòng này ở production, thay bằng gửi email
+      message:
+        "If that email is registered, a password reset link has been sent",
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -203,7 +207,9 @@ export const resetPassword = async (req, res) => {
         .json({ message: "Reset token and new password are required" });
     }
     if (!PASSWORD_REGEX.test(newPassword)) {
-      return res.status(400).json({ message: PASSWORD_MESSAGE });
+      return res.status(400).json({
+        message: PASSWORD_MESSAGE,
+      });
     }
 
     // Decode token mà không verify để lấy user ID
@@ -285,12 +291,10 @@ export const updateUserProfile = async (req, res) => {
         });
       }
       if (!PASSWORD_REGEX.test(newPassword)) {
-        return res
-          .status(400)
-          .json({
-            message:
-              "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, and a special character",
-          });
+        return res.status(400).json({
+          message:
+            "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, and a special character",
+        });
       }
     }
 
