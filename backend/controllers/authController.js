@@ -141,15 +141,6 @@ export const loginUser = async (req, res) => {
   }
 };
 
-// @desc    Logout user
-// @route   POST /api/auth/logout
-// @access  Private
-export const logoutUser = async (req, res) => {
-  // JWT là stateless — server không lưu token
-  // Client có trách nhiệm xóa token khỏi storage
-  res.status(200).json({ message: "Logged out successfully" });
-};
-
 // @desc    Forgot password — generate a short-lived reset token
 // @route   POST /api/auth/forgot-password
 // @access  Public
@@ -434,7 +425,6 @@ export const googleCallback = async (req, res) => {
 export default {
   registerUser,
   loginUser,
-  logoutUser,
   forgotPassword,
   resetPassword,
   getUserProfile,
