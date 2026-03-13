@@ -26,8 +26,10 @@ const PASSWORD_MESSAGE =
 // @access  Public
 export const registerUser = async (req, res) => {
   try {
-    const { username, email, password, profileImageUrl, adminInviteToken } =
-      req.body;
+    // const { username, email, password, profileImageUrl, adminInviteToken } =
+    //   req.body;
+
+    const { username, email, password, profileImageUrl } = req.body;
 
     // --- Validation (đặt đầu tiên, trước mọi thao tác DB) ---
     if (!username || !email || !password) {
@@ -57,13 +59,13 @@ export const registerUser = async (req, res) => {
     }
 
     // Determine user role: Admin if correct invite token is provided, otherwise regular user
-    let role = "user";
-    if (
-      adminInviteToken &&
-      adminInviteToken === process.env.ADMIN_INVITE_TOKEN
-    ) {
-      role = "admin";
-    }
+    // let role = "user";
+    // if (
+    //   adminInviteToken &&
+    //   adminInviteToken === process.env.ADMIN_INVITE_TOKEN
+    // ) {
+    //   role = "admin";
+    // }
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
@@ -75,7 +77,8 @@ export const registerUser = async (req, res) => {
       email,
       password: hashedPassword,
       profileImageUrl,
-      role,
+      // role,
+      role: "user", // Mặc định tất cả người đăng ký đều là "user". Chỉ có admin mới có thể nâng cấp role sau này.
     });
 
     res.status(201).json({
