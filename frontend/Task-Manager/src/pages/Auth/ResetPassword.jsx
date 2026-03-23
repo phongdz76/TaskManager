@@ -6,6 +6,8 @@ import AuthLayout from "../../components/layouts/AuthLayout";
 import Heading from "../../components/Heading";
 import Input from "../../components/Inputs/Input";
 import Button from "../../components/Button";
+import axiosInstance from "../../utils/axiosInstance";
+import { API_PATHS } from "../../utils/apiPaths";
 
 export default function ResetPassword() {
   const [isLoading, setIsLoading] = useState(false);
@@ -59,25 +61,10 @@ export default function ResetPassword() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/auth/reset-password",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            resetToken: token,
-            newPassword: formData.password,
-          }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to reset password");
-      }
+      await axiosInstance.post(API_PATHS.AUTH.RESET_PASSWORD, {
+        resetToken: token,
+        newPassword: formData.password,
+      });
 
       toast.success("Password reset successful! Redirecting to login...");
 

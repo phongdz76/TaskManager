@@ -1,19 +1,19 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { AiOutlineArrowLeft } from "react-icons/ai";
 import AuthLayout from "../../components/layouts/AuthLayout";
 import Heading from "../../components/Heading";
 import Input from "../../components/Inputs/Input";
 import Button from "../../components/Button";
+import axiosInstance from "../../utils/axiosInstance";
+import { API_PATHS } from "../../utils/apiPaths";
 
 export default function ForgotPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const navigate = useNavigate();
 
   const validateEmail = () => {
     if (!email.trim()) {
@@ -37,23 +37,7 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/auth/forgot-password",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to send reset email");
-      }
-
+      await axiosInstance.post(API_PATHS.AUTH.FORGOT_PASSWORD, { email });
       toast.success("Password reset link sent to your email!");
       setIsSubmitted(true);
     } catch (error) {

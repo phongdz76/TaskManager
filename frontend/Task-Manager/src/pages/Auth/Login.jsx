@@ -8,6 +8,8 @@ import Input from "../../components/Inputs/Input";
 import Button from "../../components/Button";
 import LoadingRedirect from "../../components/LoadingRedirect";
 import { validateEmail } from "../../utils/helper";
+import axiosInstance from "../../utils/axiosInstance";
+import { API_PATHS, buildApiUrl } from "../../utils/apiPaths";
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
@@ -55,34 +57,17 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("Form submitted with:", formData);
-
     if (!validateForm()) {
-      console.log("Validation failed:", errors);
       return;
     }
 
     setIsLoading(true);
 
     try {
-      console.log("Sending request to backend...");
-      const response = await fetch("http://localhost:8000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
+      const response = await axiosInstance.post(API_PATHS.AUTH.LOGIN, {
+        email: formData.email,
+        password: formData.password,
       });
-
-      const data = await response.json();
-      console.log("Response:", data);
-
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-      }
 
       // Save credentials if Remember Me is checked
       if (rememberMe) {
@@ -94,15 +79,15 @@ export default function Login() {
       }
 
       // Save token and user info
-      localStorage.setItem("token", data.token);
+      localStorage.setItem("token", response.data.token);
       localStorage.setItem(
         "user",
         JSON.stringify({
-          _id: data._id,
-          name: data.name,
-          email: data.email,
-          role: data.role,
-          profileImageUrl: data.profileImageUrl,
+          _id: response.data._id,
+          name: response.data.name,
+          email: response.data.email,
+          role: response.data.role,
+          profileImageUrl: response.data.profileImageUrl,
         }),
       );
 
@@ -111,11 +96,11 @@ export default function Login() {
       // Set redirecting state
       setIsLoading(false);
       setIsRedirecting(true);
-      setUserRole(data.role);
+      setUserRole(response.data.role);
 
       // Redirect based on user role
       setTimeout(() => {
-        if (data.role === "admin") {
+        if (response.data.role === "admin") {
           navigate("/admin/dashboard");
         } else {
           navigate("/user/dashboard");
@@ -138,7 +123,7 @@ export default function Login() {
 
   const handleGoogleLogin = () => {
     // Redirect to backend Google OAuth endpoint
-    window.location.href = "http://localhost:8000/api/auth/google";
+    window.location.href = buildApiUrl(API_PATHS.AUTH.GOOGLE_LOGIN);
   };
 
   return (

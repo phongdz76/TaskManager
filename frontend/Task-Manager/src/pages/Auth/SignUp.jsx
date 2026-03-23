@@ -8,6 +8,8 @@ import Input from "../../components/Inputs/Input";
 import Button from "../../components/Button";
 import LoadingRedirect from "../../components/LoadingRedirect";
 import { validateEmail } from "../../utils/helper";
+import axiosInstance from "../../utils/axiosInstance";
+import { API_PATHS, buildApiUrl } from "../../utils/apiPaths";
 
 export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
@@ -65,34 +67,22 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-        }),
+      const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
-      }
-
       // Save token and user info
-      localStorage.setItem("token", data.token);
+      localStorage.setItem("token", response.data.token);
       localStorage.setItem(
         "user",
         JSON.stringify({
-          _id: data._id,
-          name: data.name,
-          email: data.email,
-          role: data.role,
-          profileImageUrl: data.profileImageUrl,
+          _id: response.data._id,
+          name: response.data.name,
+          email: response.data.email,
+          role: response.data.role,
+          profileImageUrl: response.data.profileImageUrl,
         }),
       );
 
@@ -101,11 +91,11 @@ export default function SignUp() {
       // Set redirecting state
       setIsLoading(false);
       setIsRedirecting(true);
-      setUserRole(data.role);
+      setUserRole(response.data.role);
 
       // Redirect based on user role
       setTimeout(() => {
-        if (data.role === "admin") {
+        if (response.data.role === "admin") {
           navigate("/admin/dashboard");
         } else {
           navigate("/user/dashboard");
@@ -128,7 +118,7 @@ export default function SignUp() {
 
   const handleGoogleSignUp = () => {
     // Redirect to backend Google OAuth endpoint
-    window.location.href = "http://localhost:8000/api/auth/google";
+    window.location.href = buildApiUrl(API_PATHS.AUTH.GOOGLE_LOGIN);
   };
 
   return (
