@@ -4,9 +4,10 @@ import toast from "react-hot-toast";
 import { AiOutlineGoogle } from "react-icons/ai";
 import AuthLayout from "../../components/layouts/AuthLayout";
 import Heading from "../../components/Heading";
-import Input from "../../components/Input";
+import Input from "../../components/Inputs/Input";
 import Button from "../../components/Button";
 import LoadingRedirect from "../../components/LoadingRedirect";
+import { validateEmail } from "../../utils/helper";
 
 export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +34,7 @@ export default function SignUp() {
 
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    } else if (!validateEmail(formData.email)) {
       newErrors.email = "Invalid email format";
     }
 
@@ -132,7 +133,7 @@ export default function SignUp() {
 
   return (
     <AuthLayout>
-      <div className="w-full max-w-md mx-auto flex flex-col justify-center h-full">
+      <div className="w-full max-w-md lg:max-w-2xl xl:max-w-3xl mx-auto">
         {isRedirecting ? (
           <LoadingRedirect
             message="Account Created Successfully!"

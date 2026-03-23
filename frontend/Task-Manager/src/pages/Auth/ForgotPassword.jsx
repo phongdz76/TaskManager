@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { AiOutlineArrowLeft } from "react-icons/ai";
 import AuthLayout from "../../components/layouts/AuthLayout";
 import Heading from "../../components/Heading";
-import Input from "../../components/Input";
+import Input from "../../components/Inputs/Input";
 import Button from "../../components/Button";
 
 export default function ForgotPassword() {
@@ -73,7 +73,7 @@ export default function ForgotPassword() {
   if (isSubmitted) {
     return (
       <AuthLayout>
-        <div className="w-full max-w-md mx-auto flex flex-col justify-center h-full text-center">
+        <div className="w-full max-w-md lg:max-w-2xl xl:max-w-3xl mx-auto text-center">
           {/* Animated Email Icon */}
           <div className="relative mb-6">
             <div className="w-24 h-24 mx-auto bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
@@ -177,7 +177,7 @@ export default function ForgotPassword() {
 
   return (
     <AuthLayout>
-      <div className="w-full max-w-md mx-auto flex flex-col justify-center h-full">
+      <div className="w-full max-w-md lg:max-w-2xl xl:max-w-3xl mx-auto">
         <div className="flex flex-col gap-6">
           <Heading
             title="Forgot Password?"
