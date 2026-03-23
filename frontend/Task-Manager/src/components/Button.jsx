@@ -26,7 +26,7 @@ export default function Button({
         ${outline ? "bg-white" : "bg-blue-600"}
         ${outline ? "border-gray-300 border" : "border-blue-600"}
         ${outline ? "text-gray-700" : "text-white"}
-        ${outline ? "hover:bg-gray-50" : "hover:bg-blue-700"}
+        ${outline ? "hover:bg-gray-200" : "hover:bg-blue-700"}
         ${small ? "py-2 text-sm" : "py-3 text-base"}
       `}
     >
