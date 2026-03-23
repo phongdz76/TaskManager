@@ -1,9 +1,149 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import toast from "react-hot-toast";
+import { AiOutlineArrowLeft } from "react-icons/ai";
+import AuthLayout from "../../components/layouts/AuthLayout";
+import Heading from "../../components/Heading";
+import Input from "../../components/Input";
+import Button from "../../components/Button";
 
 export default function ResetPassword() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [formData, setFormData] = useState({
+    password: "",
+    confirmPassword: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [token, setToken] = useState("");
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const resetToken = searchParams.get("token");
+    if (!resetToken) {
+      toast.error("Invalid or missing reset token");
+      navigate("/login");
+    } else {
+      setToken(resetToken);
+    }
+  }, [searchParams, navigate]);
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(
+        "http://localhost:8000/api/auth/reset-password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            resetToken: token,
+            newPassword: formData.password,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to reset password");
+      }
+
+      toast.success("Password reset successful! Redirecting to login...");
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    } catch (error) {
+      toast.error(error.message || "Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
+    // Clear error when user starts typing
+    if (errors[id]) {
+      setErrors((prev) => ({ ...prev, [id]: "" }));
+    }
+  };
+
   return (
-    <div className="ResetPassword">
-      <h1 className="text-3xl">Reset Password</h1>
-    </div>
+    <AuthLayout>
+      <div className="w-full max-w-md mx-auto flex flex-col justify-center h-full">
+        <div className="flex flex-col gap-6">
+          <Heading title="Reset Password" subtitle="Enter your new password" />
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <Input
+              id="password"
+              label="New Password"
+              type="password"
+              disabled={isLoading}
+              required
+              value={formData.password}
+              onChange={handleChange}
+              error={errors.password}
+            />
+
+            <Input
+              id="confirmPassword"
+              label="Confirm New Password"
+              type="password"
+              disabled={isLoading}
+              required
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              error={errors.confirmPassword}
+            />
+
+            <Link
+              to="/login"
+              className="w-full flex justify-end items-center gap-2 text-sm text-gray-600 hover:text-blue-500 transition mb-3"
+            >
+              <AiOutlineArrowLeft />
+              Back to Login
+            </Link>
+
+            <Button
+              label={isLoading ? "Resetting..." : "Reset Password"}
+              onClick={handleSubmit}
+              disabled={isLoading}
+            />
+          </form>
+        </div>
+      </div>
+    </AuthLayout>
   );
 }
