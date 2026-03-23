@@ -13,13 +13,13 @@ const generateToken = (userId) => {
 // Reusable email regex
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Password must be ≥8 chars, contain at least:
-// one uppercase letter, one lowercase letter, one special character
+// Password must be >=8 chars, contain at least:
+// one uppercase letter, one lowercase letter, one special character, one digit
 const PASSWORD_REGEX =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
 
 const PASSWORD_MESSAGE =
-  "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, and a special character";
+  "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character";
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -47,8 +47,7 @@ export const registerUser = async (req, res) => {
     }
     if (!PASSWORD_REGEX.test(password)) {
       return res.status(400).json({
-        message:
-          "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, and a special character",
+        message: PASSWORD_MESSAGE,
       });
     }
 
@@ -286,8 +285,7 @@ export const updateUserProfile = async (req, res) => {
       }
       if (!PASSWORD_REGEX.test(newPassword)) {
         return res.status(400).json({
-          message:
-            "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, and a special character",
+          message: PASSWORD_MESSAGE,
         });
       }
     }

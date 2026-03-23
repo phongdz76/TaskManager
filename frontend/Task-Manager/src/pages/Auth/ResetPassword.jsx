@@ -35,7 +35,8 @@ export default function ResetPassword() {
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+      newErrors.password =
+        "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character";
     }
 
     if (!formData.confirmPassword) {

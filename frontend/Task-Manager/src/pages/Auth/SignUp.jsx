@@ -39,8 +39,9 @@ export default function SignUp() {
 
     if (!formData.password) {
       newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+    } else if (formData.password.length < 8) {
+      newErrors.password =
+        "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character ";
     }
 
     if (!formData.confirmPassword) {
@@ -147,6 +148,7 @@ export default function SignUp() {
                 label="Username"
                 type="text"
                 disabled={isLoading}
+                placeholder="user123"
                 required
                 value={formData.username}
                 onChange={handleChange}
@@ -158,6 +160,7 @@ export default function SignUp() {
                 label="Email"
                 type="email"
                 disabled={isLoading}
+                placeholder="user@gmail.com"
                 required
                 value={formData.email}
                 onChange={handleChange}
@@ -170,6 +173,7 @@ export default function SignUp() {
                 type="password"
                 disabled={isLoading}
                 required
+                placeholder="Min 8 characters with one uppercase letter, one lowercase letter, one special character and one number"
                 value={formData.password}
                 onChange={handleChange}
                 error={errors.password}
@@ -181,6 +185,7 @@ export default function SignUp() {
                 type="password"
                 disabled={isLoading}
                 required
+                placeholder="Confirm your password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 error={errors.confirmPassword}

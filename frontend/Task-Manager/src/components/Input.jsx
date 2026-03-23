@@ -7,6 +7,7 @@ export default function Input({
   type = "text",
   disabled,
   required,
+  placeholder,
   value,
   onChange,
   error,
@@ -30,6 +31,7 @@ export default function Input({
           id={id}
           type={inputType}
           disabled={disabled}
+          placeholder={placeholder}
           value={value}
           onChange={onChange}
           required={required}

@@ -144,10 +144,7 @@ export default function Login() {
     <AuthLayout>
       <div className="w-full max-w-md mx-auto flex flex-col justify-center h-full">
         {isRedirecting ? (
-          <LoadingRedirect
-            message="Login Successful!"
-            role={userRole}
-          />
+          <LoadingRedirect message="Login Successful!" role={userRole} />
         ) : (
           <div className="flex flex-col gap-6">
             <Heading title="Welcome Back" subtitle="Login to your account" />
@@ -159,6 +156,7 @@ export default function Login() {
                 type="email"
                 disabled={isLoading}
                 required
+                placeholder="user@gmail.com"
                 value={formData.email}
                 onChange={handleChange}
                 error={errors.email}
@@ -169,6 +167,7 @@ export default function Login() {
                 label="Password"
                 type="password"
                 disabled={isLoading}
+                placeholder="Min 8 characters"
                 required
                 value={formData.password}
                 onChange={handleChange}
