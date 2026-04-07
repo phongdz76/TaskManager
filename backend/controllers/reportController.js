@@ -182,10 +182,7 @@ export const exportMyTasks = async (req, res) => {
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=my_tasks.xlsx",
-    );
+    res.setHeader("Content-Disposition", "attachment; filename=my_tasks.xlsx");
     res.attachment("my_tasks.xlsx");
     await workbook.xlsx.write(res);
     res.end();
