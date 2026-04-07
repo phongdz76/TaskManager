@@ -179,20 +179,20 @@ backend/
 
 ### Task
 
-| Trường          | Kiểu                  | Mô tả                                                                         |
-| --------------- | --------------------- | ----------------------------------------------------------------------------- |
-| `title`         | String                | Tiêu đề công việc, bắt buộc                                                   |
-| `description`   | String                | Mô tả chi tiết                                                                |
-| `priority`      | String                | `"Low"` / `"Medium"` / `"High"` (mặc định: `"Medium"`)                        |
-| `status`        | String                | `"Pending"` / `"In-Progress"` / `"Completed"` (tự động sync với progress)     |
-| `dueDate`       | Date                  | Hạn hoàn thành                                                                |
-| `assignedTo`    | [ObjectId]            | Danh sách người được giao (ref: User), mặc định assign cho người tạo          |
-| `createdBy`     | ObjectId              | Người tạo task (ref: User)                                                    |
-| `attachments`   | [String]              | Danh sách URL file đính kèm                                                   |
-| `todoChecklist` | [{ text, completed }] | Danh sách việc cần làm con                                                    |
-| `progress`      | Number                | Phần trăm hoàn thành (0–100), **tự động tính** từ checklist (read-only)      |
-| `createdAt`     | Date                  | Tự động                                                                       |
-| `updatedAt`     | Date                  | Tự động                                                                       |
+| Trường          | Kiểu                  | Mô tả                                                                     |
+| --------------- | --------------------- | ------------------------------------------------------------------------- |
+| `title`         | String                | Tiêu đề công việc, bắt buộc                                               |
+| `description`   | String                | Mô tả chi tiết                                                            |
+| `priority`      | String                | `"Low"` / `"Medium"` / `"High"` (mặc định: `"Medium"`)                    |
+| `status`        | String                | `"Pending"` / `"In-Progress"` / `"Completed"` (tự động sync với progress) |
+| `dueDate`       | Date                  | Hạn hoàn thành                                                            |
+| `assignedTo`    | [ObjectId]            | Danh sách người được giao (ref: User), mặc định assign cho người tạo      |
+| `createdBy`     | ObjectId              | Người tạo task (ref: User)                                                |
+| `attachments`   | [String]              | Danh sách URL file đính kèm                                               |
+| `todoChecklist` | [{ text, completed }] | Danh sách việc cần làm con                                                |
+| `progress`      | Number                | Phần trăm hoàn thành (0–100), **tự động tính** từ checklist (read-only)   |
+| `createdAt`     | Date                  | Tự động                                                                   |
+| `updatedAt`     | Date                  | Tự động                                                                   |
 
 **Lưu ý về auto-sync:**
 
@@ -545,15 +545,15 @@ Kèm trường `statusSummary` tổng số theo trạng thái và `completedTodo
 }
 ```
 
-| Trường          | Bắt buộc | Ghi chú                                              |
-| --------------- | -------- | ---------------------------------------------------- |
-| `title`         | Có       | Tối đa 200 ký tự                                     |
-| `description`   | Không    | Tối đa 2000 ký tự                                    |
-| `priority`      | Không    | `Low` / `Medium` / `High`                            |
-| `dueDate`       | Không    | ISO date string, không được trong quá khứ            |
-| `assignedTo`    | Không    | Mảng User ID (mặc định: người tạo)                   |
-| `attachments`   | Không    | Mảng URL                                             |
-| `todoChecklist` | Không    | Mảng `{ text: string, completed?: boolean }`         |
+| Trường          | Bắt buộc | Ghi chú                                      |
+| --------------- | -------- | -------------------------------------------- |
+| `title`         | Có       | Tối đa 200 ký tự                             |
+| `description`   | Không    | Tối đa 2000 ký tự                            |
+| `priority`      | Không    | `Low` / `Medium` / `High`                    |
+| `dueDate`       | Không    | ISO date string, không được trong quá khứ    |
+| `assignedTo`    | Không    | Mảng User ID (mặc định: người tạo)           |
+| `attachments`   | Không    | Mảng URL                                     |
+| `todoChecklist` | Không    | Mảng `{ text: string, completed?: boolean }` |
 
 **Tính năng tự động:**
 
@@ -654,11 +654,11 @@ Kèm trường `statusSummary` tổng số theo trạng thái và `completedTodo
 
 Server tự động tính `progress` (%) và update `status`:
 
-| Progress | Status         |
-| -------- | -------------- |
-| 0%       | `"Pending"`    |
-| 1–99%    | `"In-Progress"`|
-| 100%     | `"Completed"` |
+| Progress | Status          |
+| -------- | --------------- |
+| 0%       | `"Pending"`     |
+| 1–99%    | `"In-Progress"` |
+| 100%     | `"Completed"`   |
 
 **Ví dụ:**
 
@@ -699,20 +699,20 @@ Tải về file Excel (`.xlsx`) chứa thống kê task của từng người d�
 
 ## Phân quyền
 
-| Hành động                              | User                         | Admin |
-| -------------------------------------- | :--------------------------: | :---: |
-| Đăng ký / Đăng nhập                    | ✓                            | ✓     |
-| Xem / sửa thông tin cá nhân            | ✓                            | ✓     |
-| Upload ảnh đại diện                    | ✓                            | ✓     |
-| **Tạo task**                           | ✓                            | ✓     |
-| Xem task được giao hoặc do mình tạo    | ✓                            | ✓     |
-| **Sửa / xoá task của mình**            | ✓ (nếu là creator)           | ✓     |
-| Cập nhật trạng thái / checklist        | ✓ (nếu assigned hoặc creator)| ✓     |
-| Xem tất cả task                        | ✗                            | ✓     |
-| Sửa / xoá task của người khác          | ✗                            | ✓     |
-| Quản lý người dùng                     | ✗                            | ✓     |
-| Xem dashboard đầy đủ                   | ✗ (chỉ xem task của mình)    | ✓     |
-| Xuất báo cáo Excel                     | ✗                            | ✓     |
+| Hành động                           |             User              | Admin |
+| ----------------------------------- | :---------------------------: | :---: |
+| Đăng ký / Đăng nhập                 |               ✓               |   ✓   |
+| Xem / sửa thông tin cá nhân         |               ✓               |   ✓   |
+| Upload ảnh đại diện                 |               ✓               |   ✓   |
+| **Tạo task**                        |               ✓               |   ✓   |
+| Xem task được giao hoặc do mình tạo |               ✓               |   ✓   |
+| **Sửa / xoá task của mình**         |      ✓ (nếu là creator)       |   ✓   |
+| Cập nhật trạng thái / checklist     | ✓ (nếu assigned hoặc creator) |   ✓   |
+| Xem tất cả task                     |               ✗               |   ✓   |
+| Sửa / xoá task của người khác       |               ✗               |   ✓   |
+| Quản lý người dùng                  |               ✗               |   ✓   |
+| Xem dashboard đầy đủ                |   ✗ (chỉ xem task của mình)   |   ✓   |
+| Xuất báo cáo Excel                  |               ✗               |   ✓   |
 
 **Lưu ý:**
 
