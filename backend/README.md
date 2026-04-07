@@ -179,20 +179,28 @@ backend/
 
 ### Task
 
-| Trường          | Kiểu                  | Mô tả                                                  |
-| --------------- | --------------------- | ------------------------------------------------------ |
-| `title`         | String                | Tiêu đề công việc, bắt buộc                            |
-| `description`   | String                | Mô tả chi tiết                                         |
-| `priority`      | String                | `"Low"` / `"Medium"` / `"High"` (mặc định: `"Medium"`) |
-| `status`        | String                | `"Pending"` / `"In-Progress"` / `"Completed"`          |
-| `dueDate`       | Date                  | Hạn hoàn thành                                         |
-| `assignedTo`    | [ObjectId]            | Danh sách người được giao (ref: User)                  |
-| `createdBy`     | ObjectId              | Admin tạo task (ref: User)                             |
-| `attachments`   | [String]              | Danh sách URL file đính kèm                            |
-| `todoChecklist` | [{ text, completed }] | Danh sách việc cần làm con                             |
-| `progress`      | Number                | Phần trăm hoàn thành (0–100), tự tính từ checklist     |
-| `createdAt`     | Date                  | Tự động                                                |
-| `updatedAt`     | Date                  | Tự động                                                |
+| Trường          | Kiểu                  | Mô tả                                                                         |
+| --------------- | --------------------- | ----------------------------------------------------------------------------- |
+| `title`         | String                | Tiêu đề công việc, bắt buộc                                                   |
+| `description`   | String                | Mô tả chi tiết                                                                |
+| `priority`      | String                | `"Low"` / `"Medium"` / `"High"` (mặc định: `"Medium"`)                        |
+| `status`        | String                | `"Pending"` / `"In-Progress"` / `"Completed"` (tự động sync với progress)     |
+| `dueDate`       | Date                  | Hạn hoàn thành                                                                |
+| `assignedTo`    | [ObjectId]            | Danh sách người được giao (ref: User), mặc định assign cho người tạo          |
+| `createdBy`     | ObjectId              | Người tạo task (ref: User)                                                    |
+| `attachments`   | [String]              | Danh sách URL file đính kèm                                                   |
+| `todoChecklist` | [{ text, completed }] | Danh sách việc cần làm con                                                    |
+| `progress`      | Number                | Phần trăm hoàn thành (0–100), **tự động tính** từ checklist (read-only)      |
+| `createdAt`     | Date                  | Tự động                                                                       |
+| `updatedAt`     | Date                  | Tự động                                                                       |
+
+**Lưu ý về auto-sync:**
+
+- `progress` và `status` **luôn được tính tự động** từ `todoChecklist`
+- `progress = 0` → `status = "Pending"`
+- `progress = 1-99` → `status = "In-Progress"`
+- `progress = 100` → `status = "Completed"`
+- Không thể update `progress` hoặc `status` trực tiếp qua `PUT /api/tasks/:id`
 
 ---
 
@@ -485,16 +493,16 @@ Thống kê tổng quan: số task theo trạng thái, phân bổ theo priority,
 
 #### `GET /api/tasks/user-dashboard-data` — Dashboard người dùng `[Bảo vệ]`
 
-Giống dashboard admin nhưng chỉ tính các task được giao cho người dùng hiện tại.
+Giống dashboard admin nhưng chỉ tính các task **được giao cho** hoặc **do người dùng tạo**.
 
 ---
 
 #### `GET /api/tasks` — Danh sách task `[Bảo vệ]`
 
-- **Admin:** trả về tất cả task, populate `assignedTo`.
-- **User:** trả về các task được giao cho mình.
+- **Admin:** trả về tất cả task, populate `assignedTo` và `createdBy`.
+- **User:** trả về các task được giao cho mình **hoặc** do mình tạo.
 
-Kèm trường `statusSummary` tổng số theo trạng thái.
+Kèm trường `statusSummary` tổng số theo trạng thái và `completedTodoCount` cho mỗi task.
 
 **Response `200`:**
 
@@ -509,13 +517,16 @@ Kèm trường `statusSummary` tổng số theo trạng thái.
 
 #### `GET /api/tasks/:id` — Chi tiết task `[Bảo vệ]`
 
-Admin xem tất cả; user chỉ xem task của mình.
+- **Admin:** xem tất cả task.
+- **User:** chỉ xem task được giao cho mình hoặc do mình tạo.
 
-**Response `200`:** Task object đầy đủ với `assignedTo` được populate.
+**Response `200`:** Task object đầy đủ với `assignedTo` và `createdBy` được populate.
 
 ---
 
-#### `POST /api/tasks` — Tạo task `[Admin]`
+#### `POST /api/tasks` — Tạo task `[Bảo vệ]`
+
+**Tất cả user** đều có thể tạo task. Task sẽ tự động assign cho người tạo nếu không chỉ định `assignedTo`.
 
 **Body:**
 
@@ -527,33 +538,64 @@ Admin xem tất cả; user chỉ xem task của mình.
   "dueDate": "2026-04-01",
   "assignedTo": ["<userId1>", "<userId2>"],
   "attachments": ["https://..."],
-  "todoChecklist": [{ "text": "Bước 1" }, { "text": "Bước 2" }]
+  "todoChecklist": [
+    { "text": "Bước 1", "completed": false },
+    { "text": "Bước 2", "completed": true }
+  ]
 }
 ```
 
-| Trường          | Bắt buộc | Ghi chú                   |
-| --------------- | -------- | ------------------------- |
-| `title`         | Có       |                           |
-| `description`   | Không    |                           |
-| `priority`      | Không    | `Low` / `Medium` / `High` |
-| `dueDate`       | Không    | ISO date string           |
-| `assignedTo`    | Không    | Mảng User ID              |
-| `attachments`   | Không    | Mảng URL                  |
-| `todoChecklist` | Không    | Mảng `{ text: string }`   |
+| Trường          | Bắt buộc | Ghi chú                                              |
+| --------------- | -------- | ---------------------------------------------------- |
+| `title`         | Có       | Tối đa 200 ký tự                                     |
+| `description`   | Không    | Tối đa 2000 ký tự                                    |
+| `priority`      | Không    | `Low` / `Medium` / `High`                            |
+| `dueDate`       | Không    | ISO date string, không được trong quá khứ            |
+| `assignedTo`    | Không    | Mảng User ID (mặc định: người tạo)                   |
+| `attachments`   | Không    | Mảng URL                                             |
+| `todoChecklist` | Không    | Mảng `{ text: string, completed?: boolean }`         |
 
-**Response `201`:** Task object vừa tạo.
+**Tính năng tự động:**
 
----
+- Nếu `todoChecklist` có items đã `completed = true`, hệ thống sẽ tự tính `progress` và `status` phù hợp ngay khi tạo.
+- Ví dụ: 1/2 items completed → `progress = 50`, `status = "In-Progress"`.
 
-#### `PUT /api/tasks/:id` — Cập nhật task `[Admin]`
-
-Body tương tự `POST /api/tasks`, tất cả trường đều tùy chọn.
-
-**Response `200`:** Task object sau khi cập nhật.
+**Response `201`:** Task object vừa tạo với `progress` và `status` đã được tính.
 
 ---
 
-#### `DELETE /api/tasks/:id` — Xoá task `[Admin]`
+#### `PUT /api/tasks/:id` — Cập nhật task `[Admin hoặc Creator]`
+
+**Admin** hoặc **người tạo task** có thể cập nhật.
+
+**Body:** Tương tự `POST /api/tasks`, tất cả trường đều tùy chọn.
+
+**⚠️ Lưu ý quan trọng:**
+
+- **KHÔNG THỂ** update trường `status` qua endpoint này.
+- Sử dụng `PUT /api/tasks/:id/status` để thay đổi status, hoặc update `todoChecklist` để auto-sync status.
+- Nếu gửi field `status`, server sẽ trả về lỗi `400`.
+
+**Ví dụ update todoChecklist:**
+
+```json
+{
+  "todoChecklist": [
+    { "text": "Bước 1", "completed": true },
+    { "text": "Bước 2", "completed": false }
+  ]
+}
+```
+
+→ Hệ thống tự động tính `progress = 50` và set `status = "In-Progress"`.
+
+**Response `200`:** Task object sau khi cập nhật với `progress` và `status` đã auto-sync.
+
+---
+
+#### `DELETE /api/tasks/:id` — Xoá task `[Admin hoặc Creator]`
+
+**Admin** hoặc **người tạo task** có thể xoá.
 
 **Response `200`:**
 
@@ -565,15 +607,29 @@ Body tương tự `POST /api/tasks`, tất cả trường đều tùy chọn.
 
 #### `PUT /api/tasks/:id/status` — Cập nhật trạng thái `[Bảo vệ]`
 
-Admin hoặc người dùng được giao có thể cập nhật.
+**Admin**, **người được giao**, hoặc **người tạo task** có thể cập nhật.
 
 **Body:**
 
 ```json
-{ "status": "In-Progress" }
+{ "status": "Completed" }
 ```
 
-> Khi chuyển sang `"Completed"`, toàn bộ mục trong `todoChecklist` sẽ được đánh dấu hoàn thành tự động.
+**Logic tự động:**
+
+1. **Khi set `status = "Completed"`:**
+   - Tất cả items trong `todoChecklist` → `completed = true`
+   - `progress = 100`
+
+2. **Khi set `status = "Pending"` hoặc `"In-Progress"`:**
+   - Hệ thống kiểm tra progress hiện tại
+   - **Nếu progress = 100%** → Reject với lỗi `400`:
+     ```json
+     {
+       "message": "Cannot set status to Pending/In-Progress when all checklist items are completed. Please uncomplete some items first or use PUT /api/tasks/:id/todo endpoint."
+     }
+     ```
+   - **Nếu progress < 100%** → Cho phép, giữ nguyên checklist và recalculate progress
 
 **Response `200`:** Task object sau khi cập nhật.
 
@@ -581,7 +637,7 @@ Admin hoặc người dùng được giao có thể cập nhật.
 
 #### `PUT /api/tasks/:id/todo` — Cập nhật checklist `[Bảo vệ]`
 
-Admin hoặc người dùng được giao có thể cập nhật.
+**Admin**, **người được giao**, hoặc **người tạo task** có thể cập nhật.
 
 **Body:**
 
@@ -594,13 +650,28 @@ Admin hoặc người dùng được giao có thể cập nhật.
 }
 ```
 
-Server tự tính `progress` (%) và tự chuyển `status`:
+**Logic tự động:**
 
-- 0% → `"Pending"`
-- 1–99% → `"In-Progress"`
-- 100% → `"Completed"`
+Server tự động tính `progress` (%) và update `status`:
 
-**Response `200`:** Task object sau khi cập nhật.
+| Progress | Status         |
+| -------- | -------------- |
+| 0%       | `"Pending"`    |
+| 1–99%    | `"In-Progress"`|
+| 100%     | `"Completed"` |
+
+**Ví dụ:**
+
+```json
+// Input: 2/3 items completed
+{ "todoChecklist": [...] }
+
+// Auto-calculated:
+// progress: 67
+// status: "In-Progress"
+```
+
+**Response `200`:** Task object sau khi cập nhật (với `assignedTo` và `createdBy` được populate).
 
 ---
 
@@ -628,18 +699,26 @@ Tải về file Excel (`.xlsx`) chứa thống kê task của từng người d�
 
 ## Phân quyền
 
-| Hành động                       | User | Admin |
-| ------------------------------- | :--: | :---: |
-| Đăng ký / Đăng nhập             |  ✓   |   ✓   |
-| Xem / sửa thông tin cá nhân     |  ✓   |   ✓   |
-| Upload ảnh đại diện             |  ✓   |   ✓   |
-| Xem task được giao              |  ✓   |   ✓   |
-| Cập nhật trạng thái / checklist |  ✓   |   ✓   |
-| Xem tất cả task                 |  ✗   |   ✓   |
-| Tạo / sửa / xoá task            |  ✗   |   ✓   |
-| Quản lý người dùng              |  ✗   |   ✓   |
-| Xem dashboard đầy đủ            |  ✗   |   ✓   |
-| Xuất báo cáo Excel              |  ✗   |   ✓   |
+| Hành động                              | User                         | Admin |
+| -------------------------------------- | :--------------------------: | :---: |
+| Đăng ký / Đăng nhập                    | ✓                            | ✓     |
+| Xem / sửa thông tin cá nhân            | ✓                            | ✓     |
+| Upload ảnh đại diện                    | ✓                            | ✓     |
+| **Tạo task**                           | ✓                            | ✓     |
+| Xem task được giao hoặc do mình tạo    | ✓                            | ✓     |
+| **Sửa / xoá task của mình**            | ✓ (nếu là creator)           | ✓     |
+| Cập nhật trạng thái / checklist        | ✓ (nếu assigned hoặc creator)| ✓     |
+| Xem tất cả task                        | ✗                            | ✓     |
+| Sửa / xoá task của người khác          | ✗                            | ✓     |
+| Quản lý người dùng                     | ✗                            | ✓     |
+| Xem dashboard đầy đủ                   | ✗ (chỉ xem task của mình)    | ✓     |
+| Xuất báo cáo Excel                     | ✗                            | ✓     |
+
+**Lưu ý:**
+
+- **User** giờ có thể tạo task và tự động được assign vào task đó.
+- **Creator** (người tạo task) có full quyền update/delete task của mình, giống như admin.
+- **Assigned user** chỉ có quyền update status và checklist, không sửa/xoá được task.
 
 ---
 
