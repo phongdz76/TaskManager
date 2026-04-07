@@ -128,4 +128,70 @@ export const exportUsersReport = async (req, res) => {
   }
 };
 
-export default { exportTasksReport, exportUsersReport };
+// @desc    Export user's own tasks (assigned to or created by user)
+// @route   GET /api/reports/export/my-tasks
+// @access  Private
+export const exportMyTasks = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Get tasks assigned to user or created by user
+    const tasks = await Task.find({
+      $or: [{ assignedTo: userId }, { createdBy: userId }],
+    })
+      .populate("assignedTo", "username email")
+      .populate("createdBy", "username email");
+
+    const workbook = new excelJS.Workbook();
+    const worksheet = workbook.addWorksheet("My Tasks");
+
+    worksheet.columns = [
+      { header: "Task ID", key: "id", width: 30 },
+      { header: "Title", key: "title", width: 30 },
+      { header: "Description", key: "description", width: 50 },
+      { header: "Priority", key: "priority", width: 15 },
+      { header: "Status", key: "status", width: 15 },
+      { header: "Progress", key: "progress", width: 12 },
+      { header: "Assigned To", key: "assignedTo", width: 30 },
+      { header: "Created By", key: "createdBy", width: 25 },
+      { header: "Due Date", key: "dueDate", width: 20 },
+    ];
+
+    tasks.forEach((task) => {
+      const assignedTo = task.assignedTo
+        .map((user) => user.username)
+        .join(", ");
+      const createdBy = task.createdBy?.username || "Unknown";
+
+      worksheet.addRow({
+        id: task._id,
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        status: task.status,
+        progress: `${task.progress}%`,
+        assignedTo: assignedTo || "Unassigned",
+        createdBy: createdBy,
+        dueDate: task.dueDate
+          ? task.dueDate.toISOString().split("T")[0]
+          : "N/A",
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=my_tasks.xlsx",
+    );
+    res.attachment("my_tasks.xlsx");
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export default { exportTasksReport, exportUsersReport, exportMyTasks };

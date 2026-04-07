@@ -677,13 +677,35 @@ Server tự động tính `progress` (%) và update `status`:
 
 ### Reports `/api/reports`
 
-> Tất cả route yêu cầu **Admin**.
+> Các route có nhãn `[Admin]` chỉ admin truy cập được.
 
 ---
 
-#### `GET /api/reports/export/tasks` — Xuất báo cáo task `[Admin]`
+#### `GET /api/reports/export/my-tasks` — Xuất báo cáo task cá nhân `[Bảo vệ]`
 
-Tải về file Excel (`.xlsx`) chứa toàn bộ task.
+**User** có thể xuất file Excel chứa tất cả task **được giao cho** hoặc **do họ tạo**.
+
+Tải về file Excel (`.xlsx`) với các cột:
+
+| Cột          | Mô tả                       |
+| ------------ | --------------------------- |
+| Task ID      | MongoDB ObjectId            |
+| Title        | Tiêu đề task                |
+| Description  | Mô tả chi tiết              |
+| Priority     | Low / Medium / High         |
+| Status       | Pending / In-Progress / Completed |
+| Progress     | % hoàn thành (0-100%)       |
+| Assigned To  | Danh sách người được giao   |
+| Created By   | Người tạo task              |
+| Due Date     | Hạn hoàn thành (YYYY-MM-DD) |
+
+**Tên file:** `my_tasks.xlsx`
+
+---
+
+#### `GET /api/reports/export/tasks` — Xuất báo cáo toàn bộ task `[Admin]`
+
+Tải về file Excel (`.xlsx`) chứa **toàn bộ** task trong hệ thống.
 
 **Các cột:** Task ID, Title, Description, Priority, Status, Assigned To, Due Date
 
@@ -708,17 +730,19 @@ Tải về file Excel (`.xlsx`) chứa thống kê task của từng người d�
 | Xem task được giao hoặc do mình tạo |               ✓               |   ✓   |
 | **Sửa / xoá task của mình**         |      ✓ (nếu là creator)       |   ✓   |
 | Cập nhật trạng thái / checklist     | ✓ (nếu assigned hoặc creator) |   ✓   |
+| **Xuất Excel task của mình**        |               ✓               |   ✓   |
 | Xem tất cả task                     |               ✗               |   ✓   |
 | Sửa / xoá task của người khác       |               ✗               |   ✓   |
 | Quản lý người dùng                  |               ✗               |   ✓   |
 | Xem dashboard đầy đủ                |   ✗ (chỉ xem task của mình)   |   ✓   |
-| Xuất báo cáo Excel                  |               ✗               |   ✓   |
+| Xuất Excel toàn bộ task/users       |               ✗               |   ✓   |
 
 **Lưu ý:**
 
 - **User** giờ có thể tạo task và tự động được assign vào task đó.
 - **Creator** (người tạo task) có full quyền update/delete task của mình, giống như admin.
 - **Assigned user** chỉ có quyền update status và checklist, không sửa/xoá được task.
+- **User** có thể xuất báo cáo Excel cho task của riêng mình (assigned hoặc created).
 
 ---
 
