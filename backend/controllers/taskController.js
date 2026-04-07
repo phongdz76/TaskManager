@@ -287,6 +287,28 @@ export const createTask = async (req, res) => {
       }
     }
 
+    // Calculate initial progress and status based on todoChecklist
+    let initialProgress = 0;
+    let initialStatus = "Pending";
+
+    if (todoChecklist && todoChecklist.length > 0) {
+      const completedCount = todoChecklist.filter(
+        (item) => item.completed,
+      ).length;
+      initialProgress = Math.round(
+        (completedCount / todoChecklist.length) * 100,
+      );
+
+      // Set initial status based on progress
+      if (initialProgress === 100) {
+        initialStatus = "Completed";
+      } else if (initialProgress > 0 && initialProgress < 100) {
+        initialStatus = "In-Progress";
+      } else {
+        initialStatus = "Pending";
+      }
+    }
+
     const task = await Task.create({
       title: title.trim(),
       description: description?.trim(),
@@ -296,6 +318,8 @@ export const createTask = async (req, res) => {
       createdBy: req.user._id,
       todoChecklist,
       attachments,
+      progress: initialProgress,
+      status: initialStatus,
     });
 
     res.status(201).json({ message: "Task created successfully", task });
@@ -555,21 +579,31 @@ export const updateTaskStatus = async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    task.status = status;
-
     if (status === "Completed") {
       // When switching to Completed: mark all checklist items as true
+      task.status = status;
       task.todoChecklist.forEach((item) => (item.completed = true));
       task.progress = 100;
     } else {
-      // When switching back to Pending/In-Progress: keep checklist as-is and recalculate progress
+      // When switching back to Pending/In-Progress: validate checklist state first
       const completedCount = task.todoChecklist.filter(
         (item) => item.completed,
       ).length;
-      task.progress =
+      const calculatedProgress =
         task.todoChecklist.length > 0
           ? Math.round((completedCount / task.todoChecklist.length) * 100)
           : 0;
+
+      // Prevent setting to Pending/In-Progress when all checklist items are completed
+      if (calculatedProgress === 100 && task.todoChecklist.length > 0) {
+        return res.status(400).json({
+          message:
+            "Cannot set status to Pending/In-Progress when all checklist items are completed. Please uncomplete some items first or use PUT /api/tasks/:id/todo endpoint.",
+        });
+      }
+
+      task.status = status;
+      task.progress = calculatedProgress;
     }
 
     await task.save();
