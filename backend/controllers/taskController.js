@@ -64,12 +64,17 @@ export const getTasks = async (req, res) => {
 
     let tasks;
     if (req.user.role === "admin") {
-      tasks = await Task.find(filter).populate("assignedTo", "username email");
+      tasks = await Task.find(filter)
+        .populate("assignedTo", "username email profileImageUrl")
+        .populate("createdBy", "username email profileImageUrl");
     } else {
-      tasks = await Task.find({ ...filter, assignedTo: req.user._id }).populate(
-        "assignedTo",
-        "username email profileImageUrl",
-      );
+      // User can see tasks assigned to them OR tasks they created
+      tasks = await Task.find({
+        ...filter,
+        $or: [{ assignedTo: req.user._id }, { createdBy: req.user._id }],
+      })
+        .populate("assignedTo", "username email profileImageUrl")
+        .populate("createdBy", "username email profileImageUrl");
     }
 
     // Add completed todoChecklist count to each task
@@ -86,26 +91,29 @@ export const getTasks = async (req, res) => {
     );
 
     // Status summary count
-    const allTasks = await Task.countDocuments(
-      req.user.role === "admin" ? {} : { assignedTo: req.user._id },
-    );
+    const baseUserFilter =
+      req.user.role === "admin"
+        ? {}
+        : { $or: [{ assignedTo: req.user._id }, { createdBy: req.user._id }] };
+
+    const allTasks = await Task.countDocuments(baseUserFilter);
 
     const pendingTasks = await Task.countDocuments({
       ...filter,
       status: "Pending",
-      ...(req.user.role !== "admin" && { assignedTo: req.user._id }),
+      ...baseUserFilter,
     });
 
     const inProgressTasks = await Task.countDocuments({
       ...filter,
       status: "In-Progress",
-      ...(req.user.role !== "admin" && { assignedTo: req.user._id }),
+      ...baseUserFilter,
     });
 
     const completedTasks = await Task.countDocuments({
       ...filter,
       status: "Completed",
-      ...(req.user.role !== "admin" && { assignedTo: req.user._id }),
+      ...baseUserFilter,
     });
 
     res.json({
@@ -131,28 +139,31 @@ export const getTaskById = async (req, res) => {
       return res.status(400).json({ message: "Invalid task ID" });
     }
 
-    const task = await Task.findById(req.params.id).populate(
-      "assignedTo",
-      "username email profileImageUrl",
-    );
+    const task = await Task.findById(req.params.id)
+      .populate("assignedTo", "username email profileImageUrl")
+      .populate("createdBy", "username email profileImageUrl");
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
-    if (
-      req.user.role !== "admin" &&
-      !isTaskAssignedToUser(task.assignedTo, req.user._id)
-    ) {
+
+    // Check permission: admin, assigned user, or task creator
+    const isAdmin = req.user.role === "admin";
+    const isAssigned = isTaskAssignedToUser(task.assignedTo, req.user._id);
+    const isCreator = task.createdBy.toString() === req.user._id.toString();
+
+    if (!isAdmin && !isAssigned && !isCreator) {
       return res.status(403).json({ message: "Access denied" });
     }
+
     res.json(task);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-// @desc   Create new task (Admin only)
+// @desc   Create new task (All authenticated users)
 // @route  POST /api/tasks
-// @access Private/Admin
+// @access Private
 export const createTask = async (req, res) => {
   try {
     const {
@@ -164,10 +175,6 @@ export const createTask = async (req, res) => {
       attachments,
       todoChecklist,
     } = req.body;
-
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ message: "Access denied" });
-    }
 
     // Validate title
     if (!title || typeof title !== "string" || title.trim().length === 0) {
@@ -206,29 +213,35 @@ export const createTask = async (req, res) => {
       });
     }
 
-    // Validate assignedTo
-    const normalizedAssignedTo = normalizeAssignedTo(assignedTo);
-    if (!normalizedAssignedTo || normalizedAssignedTo.length === 0) {
-      return res.status(400).json({
-        message: "assignedTo is required and must contain at least one user ID",
-      });
-    }
-    const hasInvalidAssignee = normalizedAssignedTo.some(
-      (id) => !isValidObjectId(id),
-    );
-    if (hasInvalidAssignee) {
-      return res
-        .status(400)
-        .json({ message: "Each assignedTo value must be a valid user ID" });
-    }
+    // Handle assignedTo based on user role
+    let normalizedAssignedTo;
+    if (assignedTo !== undefined) {
+      // Both admin and regular users can assign to anyone
+      normalizedAssignedTo = normalizeAssignedTo(assignedTo);
+      if (!normalizedAssignedTo || normalizedAssignedTo.length === 0) {
+        return res.status(400).json({
+          message: "assignedTo must contain at least one user ID",
+        });
+      }
+      const hasInvalidAssignee = normalizedAssignedTo.some(
+        (id) => !isValidObjectId(id),
+      );
+      if (hasInvalidAssignee) {
+        return res
+          .status(400)
+          .json({ message: "Each assignedTo value must be a valid user ID" });
+      }
 
-    const allAssigneesExist =
-      await validateAssignedUsersExist(normalizedAssignedTo);
-    if (!allAssigneesExist) {
-      return res.status(400).json({
-        message: "User assigned to task does not exist",
-        error: error.message,
-      });
+      const allAssigneesExist =
+        await validateAssignedUsersExist(normalizedAssignedTo);
+      if (!allAssigneesExist) {
+        return res.status(400).json({
+          message: "User assigned to task does not exist",
+        });
+      }
+    } else {
+      // If no assignedTo provided, assign to creator by default
+      normalizedAssignedTo = [req.user._id];
     }
 
     // Validate attachments
@@ -292,9 +305,9 @@ export const createTask = async (req, res) => {
   }
 };
 
-// @desc   Update task
+// @desc   Update task (Admin or task creator)
 // @route  PUT /api/tasks/:id
-// @access Private/Admin
+// @access Private
 export const updateTask = async (req, res) => {
   try {
     if (!isValidObjectId(req.params.id)) {
@@ -305,8 +318,17 @@ export const updateTask = async (req, res) => {
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ message: "Access denied" });
+
+    // Check permission: admin or task creator
+    const isAdmin = req.user.role === "admin";
+    const isCreator = task.createdBy.toString() === req.user._id.toString();
+
+    if (!isAdmin && !isCreator) {
+      return res
+        .status(403)
+        .json({
+          message: "Access denied. You can only edit tasks you created.",
+        });
     }
 
     const {
@@ -318,6 +340,9 @@ export const updateTask = async (req, res) => {
       attachments,
       todoChecklist,
     } = req.body;
+
+    // Both admin and creator can change assignedTo
+    // (Permission already checked above: only admin or creator can reach here)
 
     // Validate from fields if provided
     if (title !== undefined) {
@@ -437,9 +462,9 @@ export const updateTask = async (req, res) => {
   }
 };
 
-// @desc   Delete task
+// @desc   Delete task (Admin or task creator)
 // @route  DELETE /api/tasks/:id
-// @access Private/Admin
+// @access Private
 export const deleteTask = async (req, res) => {
   try {
     if (!isValidObjectId(req.params.id)) {
@@ -450,9 +475,19 @@ export const deleteTask = async (req, res) => {
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ message: "Access denied" });
+
+    // Check permission: admin or task creator
+    const isAdmin = req.user.role === "admin";
+    const isCreator = task.createdBy.toString() === req.user._id.toString();
+
+    if (!isAdmin && !isCreator) {
+      return res
+        .status(403)
+        .json({
+          message: "Access denied. You can only delete tasks you created.",
+        });
     }
+
     await Task.findByIdAndDelete(req.params.id);
     res.json({ message: "Task deleted successfully" });
   } catch (error) {
@@ -483,12 +518,16 @@ export const updateTaskStatus = async (req, res) => {
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
-    if (
-      req.user.role !== "admin" &&
-      !isTaskAssignedToUser(task.assignedTo, req.user._id)
-    ) {
+
+    // Check permission: admin, assigned user, or task creator
+    const isAdmin = req.user.role === "admin";
+    const isAssigned = isTaskAssignedToUser(task.assignedTo, req.user._id);
+    const isCreator = task.createdBy.toString() === req.user._id.toString();
+
+    if (!isAdmin && !isAssigned && !isCreator) {
       return res.status(403).json({ message: "Access denied" });
     }
+
     task.status = req.body.status || task.status;
     if (status === "Completed") {
       task.todoChecklist.forEach((item) => (item.completed = true));
@@ -536,10 +575,13 @@ export const updateTaskChecklist = async (req, res) => {
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
-    if (
-      req.user.role !== "admin" &&
-      !isTaskAssignedToUser(task.assignedTo, req.user._id)
-    ) {
+
+    // Check permission: admin, assigned user, or task creator
+    const isAdmin = req.user.role === "admin";
+    const isAssigned = isTaskAssignedToUser(task.assignedTo, req.user._id);
+    const isCreator = task.createdBy.toString() === req.user._id.toString();
+
+    if (!isAdmin && !isAssigned && !isCreator) {
       return res.status(403).json({ message: "Access denied" });
     }
 
@@ -565,10 +607,9 @@ export const updateTaskChecklist = async (req, res) => {
       task.status = "Pending";
     }
     await task.save();
-    const updatedTask = await Task.findById(req.params.id).populate(
-      "assignedTo",
-      "username email profileImageUrl",
-    );
+    const updatedTask = await Task.findById(req.params.id)
+      .populate("assignedTo", "username email profileImageUrl")
+      .populate("createdBy", "username email profileImageUrl");
     res.json({
       message: "Task checklist updated successfully",
       task: updatedTask,
@@ -664,23 +705,27 @@ export const getUserDashboardData = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Fetch statistics for user-specific data
+    // User sees tasks assigned to them OR tasks they created
+    const userFilter = {
+      $or: [{ assignedTo: userId }, { createdBy: userId }],
+    };
 
-    const totalTasks = await Task.countDocuments({ assignedTo: userId });
+    // Fetch statistics for user-specific data
+    const totalTasks = await Task.countDocuments(userFilter);
     const pendingTasks = await Task.countDocuments({
-      assignedTo: userId,
+      ...userFilter,
       status: "Pending",
     });
     const inProgressTasks = await Task.countDocuments({
-      assignedTo: userId,
+      ...userFilter,
       status: "In-Progress",
     });
     const completedTasks = await Task.countDocuments({
-      assignedTo: userId,
+      ...userFilter,
       status: "Completed",
     });
     const overdueTasks = await Task.countDocuments({
-      assignedTo: userId,
+      ...userFilter,
       dueDate: { $lt: new Date() },
       status: { $ne: "Completed" },
     });
@@ -688,7 +733,7 @@ export const getUserDashboardData = async (req, res) => {
     // Task distribution by status for user
     const taskStatuses = ["Pending", "In-Progress", "Completed"];
     const taskDistributionRaw = await Task.aggregate([
-      { $match: { assignedTo: userId } },
+      { $match: userFilter },
       {
         $group: {
           _id: "$status",
@@ -706,7 +751,7 @@ export const getUserDashboardData = async (req, res) => {
     // Task distribution by priority for user
     const taskPriorities = ["Low", "Medium", "High"];
     const taskPriorityLevelsRaw = await Task.aggregate([
-      { $match: { assignedTo: userId } },
+      { $match: userFilter },
       {
         $group: {
           _id: "$priority",
@@ -719,9 +764,9 @@ export const getUserDashboardData = async (req, res) => {
         taskPriorityLevelsRaw.find((item) => item._id === priority)?.count || 0;
       return acc;
     }, {});
-    
+
     // Fetch recent 10 tasks for user
-    const recentTasks = await Task.find({ assignedTo: userId })
+    const recentTasks = await Task.find(userFilter)
       .sort({ createdAt: -1 })
       .limit(10)
       .select("title status priority dueDate createdAt");
