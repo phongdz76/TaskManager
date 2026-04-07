@@ -149,7 +149,8 @@ export const getTaskById = async (req, res) => {
     // Check permission: admin, assigned user, or task creator
     const isAdmin = req.user.role === "admin";
     const isAssigned = isTaskAssignedToUser(task.assignedTo, req.user._id);
-    const isCreator = task.createdBy.toString() === req.user._id.toString();
+    const creatorId = task.createdBy?._id || task.createdBy;
+    const isCreator = creatorId.toString() === req.user._id.toString();
 
     if (!isAdmin && !isAssigned && !isCreator) {
       return res.status(403).json({ message: "Access denied" });
@@ -321,14 +322,13 @@ export const updateTask = async (req, res) => {
 
     // Check permission: admin or task creator
     const isAdmin = req.user.role === "admin";
-    const isCreator = task.createdBy.toString() === req.user._id.toString();
+    const creatorId = task.createdBy?._id || task.createdBy;
+    const isCreator = creatorId.toString() === req.user._id.toString();
 
     if (!isAdmin && !isCreator) {
-      return res
-        .status(403)
-        .json({
-          message: "Access denied. You can only edit tasks you created.",
-        });
+      return res.status(403).json({
+        message: "Access denied. You can only edit tasks you created.",
+      });
     }
 
     const {
@@ -453,7 +453,27 @@ export const updateTask = async (req, res) => {
     if (normalizedAssignedTo !== undefined)
       task.assignedTo = normalizedAssignedTo;
     if (attachments !== undefined) task.attachments = attachments;
-    if (todoChecklist !== undefined) task.todoChecklist = todoChecklist;
+    if (todoChecklist !== undefined) {
+      task.todoChecklist = todoChecklist;
+
+      // Automatically recalculate progress and status when todoChecklist changes
+      const completedCount = todoChecklist.filter(
+        (item) => item.completed,
+      ).length;
+      task.progress =
+        todoChecklist.length > 0
+          ? Math.round((completedCount / todoChecklist.length) * 100)
+          : 0;
+
+      // Automatically update status based on progress
+      if (task.progress === 100) {
+        task.status = "Completed";
+      } else if (task.progress > 0 && task.progress < 100) {
+        task.status = "In-Progress";
+      } else {
+        task.status = "Pending";
+      }
+    }
 
     const updatedTask = await task.save();
     res.json({ message: "Task updated successfully", updatedTask });
@@ -478,14 +498,13 @@ export const deleteTask = async (req, res) => {
 
     // Check permission: admin or task creator
     const isAdmin = req.user.role === "admin";
-    const isCreator = task.createdBy.toString() === req.user._id.toString();
+    const creatorId = task.createdBy?._id || task.createdBy;
+    const isCreator = creatorId.toString() === req.user._id.toString();
 
     if (!isAdmin && !isCreator) {
-      return res
-        .status(403)
-        .json({
-          message: "Access denied. You can only delete tasks you created.",
-        });
+      return res.status(403).json({
+        message: "Access denied. You can only delete tasks you created.",
+      });
     }
 
     await Task.findByIdAndDelete(req.params.id);
@@ -522,17 +541,30 @@ export const updateTaskStatus = async (req, res) => {
     // Check permission: admin, assigned user, or task creator
     const isAdmin = req.user.role === "admin";
     const isAssigned = isTaskAssignedToUser(task.assignedTo, req.user._id);
-    const isCreator = task.createdBy.toString() === req.user._id.toString();
+    const creatorId = task.createdBy?._id || task.createdBy;
+    const isCreator = creatorId.toString() === req.user._id.toString();
 
     if (!isAdmin && !isAssigned && !isCreator) {
       return res.status(403).json({ message: "Access denied" });
     }
 
     task.status = req.body.status || task.status;
+
     if (status === "Completed") {
+      // When switching to Completed: mark all checklist items as true
       task.todoChecklist.forEach((item) => (item.completed = true));
       task.progress = 100;
+    } else {
+      // When switching back to Pending/In-Progress: keep checklist as-is and recalculate progress
+      const completedCount = task.todoChecklist.filter(
+        (item) => item.completed,
+      ).length;
+      task.progress =
+        task.todoChecklist.length > 0
+          ? Math.round((completedCount / task.todoChecklist.length) * 100)
+          : 0;
     }
+
     await task.save();
     res.json({ message: "Task status updated successfully", task });
   } catch (error) {
@@ -579,7 +611,8 @@ export const updateTaskChecklist = async (req, res) => {
     // Check permission: admin, assigned user, or task creator
     const isAdmin = req.user.role === "admin";
     const isAssigned = isTaskAssignedToUser(task.assignedTo, req.user._id);
-    const isCreator = task.createdBy.toString() === req.user._id.toString();
+    const creatorId = task.createdBy?._id || task.createdBy;
+    const isCreator = creatorId.toString() === req.user._id.toString();
 
     if (!isAdmin && !isAssigned && !isCreator) {
       return res.status(403).json({ message: "Access denied" });
@@ -587,7 +620,7 @@ export const updateTaskChecklist = async (req, res) => {
 
     task.todoChecklist = todoChecklist;
 
-    // Tự động tính progress dựa trên checklist
+    // Automatically calculate progress from checklist
     const completedCount = todoChecklist.filter(
       (item) => item.completed,
     ).length;
@@ -596,11 +629,11 @@ export const updateTaskChecklist = async (req, res) => {
         ? Math.round((completedCount / todoChecklist.length) * 100)
         : 0;
 
-    // Nếu tất cả checklist đều hoàn thành, tự động chuyển trạng thái task thành Completed
+    // If all checklist items are completed, automatically set task status to Completed
     if (task.progress === 100) {
       task.status = "Completed";
     }
-    // Nếu có checklist đã hoàn thành nhưng chưa đủ 100%, chuyển trạng thái thành In-Progress
+    // If some checklist items are completed but not 100%, set status to In-Progress
     else if (task.progress > 0 && task.progress < 100) {
       task.status = "In-Progress";
     } else {

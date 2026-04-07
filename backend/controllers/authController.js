@@ -31,7 +31,7 @@ export const registerUser = async (req, res) => {
 
     const { username, email, password, profileImageUrl } = req.body;
 
-    // --- Validation (đặt đầu tiên, trước mọi thao tác DB) ---
+    // --- Validation (placed first, before any DB operations) ---
     if (!username || !email || !password) {
       return res
         .status(400)
@@ -77,7 +77,7 @@ export const registerUser = async (req, res) => {
       password: hashedPassword,
       profileImageUrl,
       // role,
-      role: "user", // Mặc định tất cả người đăng ký đều là "user". Chỉ có admin mới có thể nâng cấp role sau này.
+      role: "user", // By default, all new sign-ups are "user". Only admins can promote roles later.
     });
 
     res.status(201).json({
@@ -113,18 +113,18 @@ export const loginUser = async (req, res) => {
     // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      // Không tiết lộ email có tồn tại hay không
+      // Do not disclose whether the email exists
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Tài khoản Google-only không có password
+    // Google-only accounts do not have a password
     if (!user.password) {
       return res.status(401).json({
         message: "This account uses Google Sign-In. Please login with Google.",
       });
     }
 
-    // So sánh mật khẩu plain-text với hash đã lưu
+    // Compare plain-text password with stored hash
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password" });
@@ -165,15 +165,15 @@ export const forgotPassword = async (req, res) => {
       });
     }
 
-    // Token được ký bằng JWT_SECRET + password hash hiện tại của user
-    // → Token tự động vô hiệu hóa ngay khi password thay đổi (stateless, không cần lưu DB)
+    // Token is signed with JWT_SECRET + the user's current password hash
+    // -> Token is automatically invalidated when password changes (stateless, no DB storage needed)
     const resetToken = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET + user.password,
       { expiresIn: "15m" },
     );
 
-    // Gửi email chứa link reset password đến người dùng
+    // Send password reset link to the user by email
     const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
     await sendPasswordResetEmail(user.email, resetUrl);
 
@@ -193,7 +193,7 @@ export const resetPassword = async (req, res) => {
   try {
     const { resetToken, newPassword } = req.body;
 
-    // --- Validation (trước khi chạm vào DB) ---
+    // --- Validation (before touching the DB) ---
     if (!resetToken || !newPassword) {
       return res
         .status(400)
@@ -205,20 +205,20 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    // Decode token mà không verify để lấy user ID
+    // Decode token without verification to get the user ID
     const decoded = jwt.decode(resetToken);
     if (!decoded || !decoded.id) {
       return res.status(400).json({ message: "Invalid reset token" });
     }
 
-    // Tải user để lấy password hash (dùng làm một phần của signing secret)
+    // Load user to get password hash (used as part of the signing secret)
     const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(400).json({ message: "Invalid reset token" });
     }
 
-    // Xác thực token bằng JWT_SECRET + password hash hiện tại
-    // Nếu password đã đổi trước đó, token sẽ không còn hợp lệ
+    // Verify token using JWT_SECRET + current password hash
+    // If the password was changed earlier, the token is no longer valid
     try {
       jwt.verify(resetToken, process.env.JWT_SECRET + user.password);
     } catch {
@@ -227,7 +227,7 @@ export const resetPassword = async (req, res) => {
         .json({ message: "Reset token is invalid or has expired" });
     }
 
-    // Hash mật khẩu mới và lưu
+    // Hash and save the new password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
@@ -243,7 +243,7 @@ export const resetPassword = async (req, res) => {
 // @access  Private
 export const getUserProfile = async (req, res) => {
   try {
-    // req.user được set bởi protect middleware (không có trường password)
+    // req.user is set by protect middleware (without password field)
     const user = await User.findById(req.user._id).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -295,7 +295,7 @@ export const updateUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Xác thực mật khẩu hiện tại trước khi cho phép thay đổi mật khẩu
+    // Validate current password before allowing password change
     if (newPassword) {
       const isMatch = await bcrypt.compare(currentPassword, user.password);
       if (!isMatch) {
@@ -307,7 +307,7 @@ export const updateUserProfile = async (req, res) => {
       user.password = await bcrypt.hash(newPassword, salt);
     }
 
-    // Kiểm tra email mới chưa được dùng bởi user khác
+    // Ensure the new email is not already used by another user
     if (email && email !== user.email) {
       const emailTaken = await User.findOne({ email });
       if (emailTaken) {

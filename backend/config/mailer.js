@@ -1,18 +1,18 @@
 import nodemailer from "nodemailer";
 
-// Gmail transporter — dùng App Password (không phải mật khẩu Gmail thông thường)
+// Gmail transporter - use App Password (not the regular Gmail account password)
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // App Password 16 ký tự từ Google Account
+    pass: process.env.EMAIL_PASS, // 16-character App Password from Google Account
   },
 });
 
 /**
- * Gửi email reset password
- * @param {string} to       - Địa chỉ email người nhận
- * @param {string} resetUrl - Link reset password đầy đủ (có token)
+ * Send reset password email
+ * @param {string} to       - Recipient email address
+ * @param {string} resetUrl - Full reset password link (with token)
  */
 export const sendPasswordResetEmail = async (to, resetUrl) => {
   const mailOptions = {
