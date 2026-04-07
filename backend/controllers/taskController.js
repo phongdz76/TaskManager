@@ -78,17 +78,15 @@ export const getTasks = async (req, res) => {
     }
 
     // Add completed todoChecklist count to each task
-    tasks = await Promise.all(
-      tasks.map(async (task) => {
-        const completedCount = task.todoChecklist.filter(
-          (item) => item.completed,
-        ).length;
-        return {
-          ...task._doc,
-          completedTodoCount: completedCount,
-        };
-      }),
-    );
+    tasks = tasks.map((task) => {
+      const completedCount = task.todoChecklist.filter(
+        (item) => item.completed,
+      ).length;
+      return {
+        ...task._doc,
+        completedTodoCount: completedCount,
+      };
+    });
 
     // Status summary count
     const baseUserFilter =
@@ -339,7 +337,16 @@ export const updateTask = async (req, res) => {
       assignedTo,
       attachments,
       todoChecklist,
+      status,
     } = req.body;
+
+    // Reject if user tries to update status directly (use updateTaskStatus endpoint instead)
+    if (status !== undefined) {
+      return res.status(400).json({
+        message:
+          "Cannot update status directly. Please update todoChecklist to auto-sync status.",
+      });
+    }
 
     // Both admin and creator can change assignedTo
     // (Permission already checked above: only admin or creator can reach here)
@@ -548,7 +555,7 @@ export const updateTaskStatus = async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    task.status = req.body.status || task.status;
+    task.status = status;
 
     if (status === "Completed") {
       // When switching to Completed: mark all checklist items as true
