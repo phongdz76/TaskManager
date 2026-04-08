@@ -1,6 +1,6 @@
-import { UserContext, use, useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useContext } from "../context/userContext";
+import { UserContext } from "../context/userContext";
 
 export default function useUserAuth() {
   const { user, loading, clearUser } = useContext(UserContext);

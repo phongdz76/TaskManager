@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { AiOutlineGoogle } from "react-icons/ai";
@@ -10,8 +10,10 @@ import LoadingRedirect from "../../components/LoadingRedirect";
 import { validateEmail } from "../../utils/helper";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS, buildApiUrl } from "../../utils/apiPaths";
+import { UserContext } from "../../context/userContext";
 
 export default function Login() {
+  const { updateUser } = useContext(UserContext);
   const [isLoading, setIsLoading] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [userRole, setUserRole] = useState("");
@@ -79,17 +81,16 @@ export default function Login() {
       }
 
       // Save token and user info
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          _id: response.data._id,
-          name: response.data.name,
-          email: response.data.email,
-          role: response.data.role,
-          profileImageUrl: response.data.profileImageUrl,
-        }),
-      );
+      const userData = {
+        _id: response.data._id,
+        name: response.data.name,
+        email: response.data.email,
+        role: response.data.role,
+        profileImageUrl: response.data.profileImageUrl,
+      };
+
+      // Update UserContext
+      updateUser(userData, response.data.token);
 
       toast.success("Logged in successfully!");
 
