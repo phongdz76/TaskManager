@@ -169,6 +169,7 @@ export const createTask = async (req, res) => {
       title,
       description,
       priority,
+      startDate,
       dueDate,
       assignedTo,
       attachments,
@@ -199,6 +200,16 @@ export const createTask = async (req, res) => {
     if (priority !== undefined && !VALID_PRIORITIES.includes(priority)) {
       return res.status(400).json({
         message: `Priority must be one of: ${VALID_PRIORITIES.join(", ")}`,
+      });
+    }
+
+    // Validate startDate
+    if (startDate !== undefined && startDate !== null && !isValidDate(startDate)) {
+      return res.status(400).json({ message: "Invalid start date" });
+    }
+    if (startDate !== undefined && startDate !== null && hasPastDate(startDate)) {
+      return res.status(400).json({
+        message: "Start date cannot be in the past",
       });
     }
 
@@ -313,6 +324,7 @@ export const createTask = async (req, res) => {
       title: title.trim(),
       description: description?.trim(),
       priority,
+      startDate: startDate || new Date(),
       dueDate,
       assignedTo: normalizedAssignedTo,
       createdBy: req.user._id,
