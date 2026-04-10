@@ -1,5 +1,4 @@
-export const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+export const BASE_URL = "http://localhost:8000";
 
 export const API_PATHS = {
   AUTH: {
@@ -8,7 +7,6 @@ export const API_PATHS = {
     FORGOT_PASSWORD: "/api/auth/forgot-password",
     RESET_PASSWORD: "/api/auth/reset-password",
     PROFILE: "/api/auth/profile",
-    UPDATE_PROFILE: "/api/auth/profile",
     GOOGLE_LOGIN: "/api/auth/google",
     GOOGLE_CALLBACK: "/api/auth/callback/google",
   },
@@ -34,7 +32,6 @@ export const API_PATHS = {
   },
 
   REPORTS: {
-    EXPORT_MY_TASKS: "/api/reports/export/my-tasks",
     EXPORT_TASKS: "/api/reports/export/tasks",
     EXPORT_USERS: "/api/reports/export/users",
   },
