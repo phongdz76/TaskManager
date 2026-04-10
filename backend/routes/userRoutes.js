@@ -6,12 +6,14 @@ import {
   updateUserRole,
   deleteUser,
   getAdmins,
+  getAssignableUsers,
 } from "../controllers/userController.js";
 
 const router = express.Router();
 
 router.get("/", protect, adminOnly, getUsers); // Get all users (admin only)
 router.get("/admins", protect, adminOnly, getAdmins); // Get all admins (admin only)
+router.get("/assignable", protect, getAssignableUsers); // Get all users for task assignment (any user)
 router.get("/:id", protect, getUserById); // Get user by ID (admin or the user themselves)
 router.patch("/:id/role", protect, adminOnly, updateUserRole); // Update user role (admin only)
 router.delete("/:id", protect, adminOnly, deleteUser); // Delete user (admin only)

@@ -25,36 +25,15 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error?.response?.status;
-    const code = error?.code;
     const hasAuthHeader = Boolean(error?.config?.headers?.Authorization);
 
     if (status === 401 && hasAuthHeader) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       window.location.href = "/login";
-      return Promise.reject(error);
     }
 
-    if (status === 500) {
-      console.error("Server error:", error);
-      return Promise.reject({
-        message: "Internal server error. Please try again later.",
-        status,
-      });
-    }
-
-    if (code === "ECONNABORTED") {
-      return Promise.reject({
-        message: "Request timeout. Please try again.",
-      });
-    }
-
-    return Promise.reject({
-      message:
-        error?.response?.data?.message || error.message || "Request failed",
-      status,
-      data: error?.response?.data,
-    });
+    return Promise.reject(error);
   },
 );
 

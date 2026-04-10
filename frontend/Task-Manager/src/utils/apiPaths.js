@@ -16,6 +16,7 @@ export const API_PATHS = {
   USERS: {
     GET_ALL_USERS: "/api/users",
     GET_ADMINS: "/api/users/admins",
+    GET_ASSIGNABLE_USERS: "/api/users/assignable",
     GET_USER_BY_ID: (userId) => `/api/users/${userId}`,
     UPDATE_ROLE: (userId) => `/api/users/${userId}/role`,
     DELETE_USER: (userId) => `/api/users/${userId}`,
