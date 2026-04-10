@@ -2,6 +2,20 @@ import Task from "../models/Task.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 
+// @desc    Get all users for task assignment (any authenticated user)
+// @route   GET /api/users/assignable
+// @access  Private
+export const getAssignableUsers = async (req, res) => {
+  try {
+    const users = await User.find().select(
+      "_id username email profileImageUrl role",
+    );
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // @desc    Get all users (admin only)
 // @route   GET /api/users
 // @access  Private/Admin
@@ -113,6 +127,7 @@ export default {
   getUsers,
   getUserById,
   getAdmins,
+  getAssignableUsers,
   updateUserRole,
   deleteUser,
 };
