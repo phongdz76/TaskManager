@@ -193,7 +193,7 @@ export default function UserDashboard() {
                 <h3 className="text-lg font-bold text-gray-800 mb-6">
                   Task Distribution
                 </h3>
-                <div className="h-72 min-h-[300px] w-full">
+                <div className="h-72 min-h-75 w-full">
                   {pieChartData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -258,7 +258,7 @@ export default function UserDashboard() {
                 <h3 className="text-lg font-bold text-gray-800 mb-6">
                   Tasks by Priority
                 </h3>
-                <div className="h-72 min-h-[300px] w-full">
+                <div className="h-72 min-h-75 w-full">
                   {barChartData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
@@ -323,7 +323,7 @@ export default function UserDashboard() {
                 </button>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[700px] table-fixed text-left">
+                <table className="w-full min-w-175 table-fixed text-left">
                   <thead>
                     <tr className="border-b border-gray-100 uppercase text-xs tracking-wider text-gray-500">
                       <th className="pb-4 px-4 font-semibold w-[46%]">Title</th>
@@ -347,7 +347,7 @@ export default function UserDashboard() {
                         >
                           <td className="py-4 px-4 align-top">
                             <p
-                              className="text-gray-800 font-semibold whitespace-normal break-words leading-6"
+                              className="text-gray-800 font-semibold whitespace-normal wrap-break-word leading-6"
                               title={task.title}
                             >
                               {task.title}
