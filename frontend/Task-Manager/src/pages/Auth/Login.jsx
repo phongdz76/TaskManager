@@ -12,6 +12,9 @@ import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS, buildApiUrl } from "../../utils/apiPaths";
 import { UserContext } from "../../context/userContext";
 
+const PASSWORD_HELPER_TEXT =
+  "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
+
 export default function Login() {
   const { updateUser } = useContext(UserContext);
   const [isLoading, setIsLoading] = useState(false);
@@ -159,6 +162,8 @@ export default function Login() {
                 value={formData.password}
                 onChange={handleChange}
                 error={errors.password}
+                helperText={PASSWORD_HELPER_TEXT}
+                showHelperOnFocus
               />
 
               <div className="flex items-center justify-between">

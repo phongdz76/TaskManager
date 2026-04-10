@@ -11,14 +11,19 @@ export default function Input({
   value,
   onChange,
   error,
+  helperText,
+  showHelperOnFocus = false,
 }) {
   const [showPassword, setShowPassword] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const isPasswordField = type === "password";
   const inputType = isPasswordField && showPassword ? "text" : type;
+  const shouldShowHelperText =
+    Boolean(helperText) && (!showHelperOnFocus || isFocused);
 
   return (
-    <div className="w-full">
+    <div className="w-full min-w-0">
       <label
         htmlFor={id}
         className="block text-sm font-medium text-gray-700 mb-2"
@@ -34,6 +39,8 @@ export default function Input({
           placeholder={placeholder}
           value={value}
           onChange={onChange}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           required={required}
           className={`
             w-full
@@ -66,6 +73,9 @@ export default function Input({
         )}
       </div>
       {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+      {shouldShowHelperText && (
+        <p className="text-xs text-gray-500 mt-1">{helperText}</p>
+      )}
     </div>
   );
 }

@@ -9,6 +9,9 @@ import Button from "../../components/Button";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 
+const PASSWORD_HELPER_TEXT =
+  "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
+
 export default function ResetPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchParams] = useSearchParams();
@@ -103,6 +106,8 @@ export default function ResetPassword() {
               value={formData.password}
               onChange={handleChange}
               error={errors.password}
+              helperText={PASSWORD_HELPER_TEXT}
+              showHelperOnFocus
             />
 
             <Input
