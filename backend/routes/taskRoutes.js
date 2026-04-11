@@ -11,6 +11,7 @@ import {
   updateTaskChecklist,
   getDashboardData,
   getUserDashboardData,
+  togglePinTask,
 } from "../controllers/taskController.js";
 const router = express.Router();
 
@@ -24,5 +25,6 @@ router.put("/:id", protect, updateTask); // Update task (admin or creator)
 router.delete("/:id", protect, deleteTask); // Delete task (admin or creator)
 router.put("/:id/status", protect, updateTaskStatus); // Update task status (admin, assigned user, or creator)
 router.put("/:id/todo", protect, updateTaskChecklist); // Update task checklist (admin, assigned user, or creator)
+router.patch("/:id/pin", protect, togglePinTask); // Toggle task pin status
 
 export default router;

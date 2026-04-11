@@ -32,6 +32,7 @@ export const API_PATHS = {
     UPDATE_CHECKLIST: (taskId) => `/api/tasks/${taskId}/todo`,
     DASHBOARD_DATA: "/api/tasks/dashboard-data",
     USER_DASHBOARD_DATA: "/api/tasks/user-dashboard-data",
+    TOGGLE_PIN: (taskId) => `/api/tasks/${taskId}/pin`,
   },
 
   REPORTS: {
