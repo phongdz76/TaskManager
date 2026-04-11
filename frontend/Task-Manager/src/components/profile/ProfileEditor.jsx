@@ -13,6 +13,7 @@ const PASSWORD_REGEX =
 
 const PASSWORD_MESSAGE =
   "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character";
+const PROFILE_LOADER_MIN_MS = 450;
 
 const getDisplayName = (user) => user?.name || user?.username || "";
 
@@ -25,12 +26,13 @@ const buildInitialForm = (user) => ({
 });
 
 export default function ProfileEditor() {
-  const { user, updateUser } = useContext(UserContext);
+  const { user, updateUser, loading } = useContext(UserContext);
   const [formData, setFormData] = useState(buildInitialForm(user));
   const [errors, setErrors] = useState({});
   const [imageLoadError, setImageLoadError] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [minimumLoaderDone, setMinimumLoaderDone] = useState(false);
 
   const imageUrl = formData.profileImageUrl?.trim() || "";
 
@@ -42,6 +44,15 @@ export default function ProfileEditor() {
   useEffect(() => {
     setImageLoadError(false);
   }, [imageUrl]);
+
+  useEffect(() => {
+    // Keep loader visible briefly so transition is noticeable on fast responses.
+    const timeoutId = setTimeout(() => {
+      setMinimumLoaderDone(true);
+    }, PROFILE_LOADER_MIN_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, []);
 
   const hasChanges = useMemo(() => {
     const currentName = getDisplayName(user).trim();
@@ -200,12 +211,21 @@ export default function ProfileEditor() {
     }
   };
 
-  if (!user) {
+  const showProfileLoader = loading || (Boolean(user) && !minimumLoaderDone);
+
+  if (showProfileLoader) {
     return (
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 text-gray-600">
-        Loading profile...
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="min-h-[50vh] flex flex-col items-center justify-center">
+          <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
+          <p className="mt-4 text-gray-500 font-medium">Loading profile...</p>
+        </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
