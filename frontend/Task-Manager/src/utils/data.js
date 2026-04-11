@@ -42,7 +42,7 @@ export const ADMIN_SIDE_MENU_DATA = [
   },
   {
     id: "06",
-    label: "Manager All Task User",
+    label: "Manager All Task",
     icon: LuListTodo,
     path: "/admin/all-user-tasks",
   },

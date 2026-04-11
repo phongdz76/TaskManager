@@ -22,7 +22,7 @@ import ManagerTask from "./pages/Admin/ManagerTask";
 import AdminViewTaskDetails from "./pages/Admin/ViewTaskDetails";
 import ManagerUser from "./pages/Admin/ManagerUser";
 import TeamMembers from "./pages/Admin/TeamMembers";
-import AllUserTasks from "./pages/Admin/ManagerAllUserTasks";
+import AllUserTasks from "./pages/Admin/ManagerAllTasks";
 import AdminProfile from "./pages/Admin/Profile";
 
 // User Pages
