@@ -19,6 +19,7 @@ import {
 } from "react-icons/fa";
 import moment from "moment";
 import Pagination from "../../components/Pagination";
+import ReportDownloadButton from "../../components/ReportDownloadButton";
 
 const STATUS_FILTERS = ["All", "Pending", "In-Progress", "Completed"];
 
@@ -229,14 +230,21 @@ export default function MyTasks() {
             </p>
           </div>
 
-          <button
-            onClick={fetchTasks}
-            disabled={loading}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm flex items-center disabled:opacity-60"
-          >
-            <FaSpinner className={`mr-2 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <ReportDownloadButton 
+              apiPath={API_PATHS.REPORTS.EXPORT_MY_TASKS} 
+              fileName="my_tasks_report.xlsx" 
+              buttonText="Export My Tasks" 
+            />
+            <button
+              onClick={fetchTasks}
+              disabled={loading}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm flex items-center disabled:opacity-60"
+            >
+              <FaSpinner className={`mr-2 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -423,10 +431,9 @@ export default function MyTasks() {
                               onChange={(e) =>
                                 handleUpdateTaskStatus(task._id, e.target.value)
                               }
-                              className={`appearance-none cursor-pointer px-2.5 py-1 rounded-full text-xs font-medium border outline-none transition-colors ${
-                                STATUS_STYLES[task.status] ||
+                              className={`appearance-none cursor-pointer px-2.5 py-1 rounded-full text-xs font-medium border outline-none transition-colors ${STATUS_STYLES[task.status] ||
                                 "bg-gray-50 text-gray-700 border-gray-200"
-                              }`}
+                                }`}
                             >
                               <option value="Pending">Pending</option>
                               <option value="In-Progress">In Progress</option>

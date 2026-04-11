@@ -43,6 +43,7 @@ export default function EditTask() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [originalStartDate, setOriginalStartDate] = useState("");
   const [newTodo, setNewTodo] = useState("");
   const [newAttachment, setNewAttachment] = useState("");
   const [userSearch, setUserSearch] = useState("");
@@ -78,12 +79,15 @@ export default function EditTask() {
           title: task.title || "",
           description: task.description || "",
           priority: task.priority || "Medium",
-          startDate: task.createdAt ? task.createdAt.split("T")[0] : "",
+          startDate: task.startDate ? task.startDate.split("T")[0] : (task.createdAt ? task.createdAt.split("T")[0] : ""),
           dueDate: task.dueDate ? task.dueDate.split("T")[0] : "",
           assignedTo: task.assignedTo.map((u) => u._id || u) || [],
           attachments: Array.isArray(task.attachments) ? task.attachments : [],
           todoChecklist: task.todoChecklist || [],
         });
+        setOriginalStartDate(
+          task.startDate ? task.startDate.split("T")[0] : (task.createdAt ? task.createdAt.split("T")[0] : "")
+        );
       } catch (error) {
         console.error("Failed to fetch task", error);
         toast.error("Failed to load task details.");
@@ -240,6 +244,14 @@ export default function EditTask() {
       return;
     }
 
+    if (formData.startDate && formData.startDate !== originalStartDate) {
+      const today = new Date().toISOString().split("T")[0];
+      if (formData.startDate < today) {
+        toast.error("Start date cannot be changed to a past date");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       const payload = {
@@ -316,6 +328,7 @@ export default function EditTask() {
         ) : (
           <form
             onSubmit={handleSubmit}
+            noValidate
             className="grid grid-cols-1 lg:grid-cols-3 gap-6"
           >
             {/* ────── Left Column ────── */}
@@ -688,6 +701,7 @@ export default function EditTask() {
                       type="date"
                       name="startDate"
                       value={formData.startDate}
+                      min={new Date().toISOString().split("T")[0]}
                       onChange={handleChange}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none text-gray-700 text-sm"
                     />

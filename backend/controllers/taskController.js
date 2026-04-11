@@ -51,6 +51,7 @@ const validateAssignedUsersExist = async (assignedIds) => {
 export const getTasks = async (req, res) => {
   try {
     const { status } = req.query;
+    const ignorePinned = req.query.ignorePinned === "true";
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
     const skip = (page - 1) * limit;
@@ -75,8 +76,12 @@ export const getTasks = async (req, res) => {
       ...filter,
     };
 
+    const sortCriteria = ignorePinned
+      ? { createdAt: -1 }
+      : { isPinned: -1, createdAt: -1 };
+
     let tasks = await Task.find(listFilter)
-      .sort({ isPinned: -1, createdAt: -1 })
+      .sort(sortCriteria)
       .skip(skip)
       .limit(limit)
       .populate("assignedTo", "username email profileImageUrl")
@@ -382,6 +387,7 @@ export const updateTask = async (req, res) => {
       title,
       description,
       priority,
+      startDate,
       dueDate,
       assignedTo,
       attachments,
@@ -439,6 +445,31 @@ export const updateTask = async (req, res) => {
       if (existingDueDate !== newDueDate) {
         return res.status(400).json({
           message: "Due date cannot be in the past",
+        });
+      }
+    }
+
+    if (
+      startDate !== undefined &&
+      startDate !== null &&
+      !isValidDate(startDate)
+    ) {
+      return res.status(400).json({ message: "Invalid start date" });
+    }
+    if (
+      startDate !== undefined &&
+      startDate !== null &&
+      hasPastDate(startDate)
+    ) {
+      const existingStartDate = task.startDate
+        ? new Date(task.startDate).toISOString().split("T")[0]
+        : task.createdAt
+          ? new Date(task.createdAt).toISOString().split("T")[0]
+          : null;
+      const newStartDate = new Date(startDate).toISOString().split("T")[0];
+      if (existingStartDate !== newStartDate) {
+        return res.status(400).json({
+          message: "Start date cannot be changed to a past date",
         });
       }
     }
@@ -513,6 +544,7 @@ export const updateTask = async (req, res) => {
     if (title !== undefined) task.title = title.trim();
     if (description !== undefined) task.description = description.trim();
     if (priority !== undefined) task.priority = priority;
+    if (startDate !== undefined) task.startDate = startDate;
     if (dueDate !== undefined) task.dueDate = dueDate;
     if (normalizedAssignedTo !== undefined)
       task.assignedTo = normalizedAssignedTo;

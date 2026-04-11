@@ -5,6 +5,8 @@ import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import toast from "react-hot-toast";
 import Pagination from "../Pagination";
+import useUserAuth from "../../hooks/useUserAuth";
+import ReportDownloadButton from "../ReportDownloadButton";
 
 const StatItem = ({ label, value, valueClass }) => (
   <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
@@ -16,6 +18,9 @@ const StatItem = ({ label, value, valueClass }) => (
 const PAGE_LIMIT = 10;
 
 export default function TeamMembersView({ activeMenu, subtitle }) {
+  const { user } = useUserAuth();
+  const isAdmin = user?.role === "admin";
+
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -150,14 +155,23 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
             <p className="mt-2 text-gray-500">{subtitle}</p>
           </div>
 
-          <button
-            onClick={fetchMembers}
-            disabled={loading}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm flex items-center disabled:opacity-60"
-          >
-            <FaSpinner className={`mr-2 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
+          <div className="flex flex-wrap gap-3">
+            {isAdmin && (
+              <ReportDownloadButton 
+                apiPath={API_PATHS.REPORTS.EXPORT_USERS} 
+                fileName="team_members_report.xlsx" 
+                buttonText="Export Team Members" 
+              />
+            )}
+            <button
+              onClick={fetchMembers}
+              disabled={loading}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm flex items-center disabled:opacity-60"
+            >
+              <FaSpinner className={`mr-2 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
+          </div>
         </div>
 
         <div className="bg-white p-4 rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 mb-6">

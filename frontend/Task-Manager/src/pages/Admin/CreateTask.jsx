@@ -14,7 +14,6 @@ import {
   FaCalendarAlt,
   FaLink,
 } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../context/userContext";
 import moment from "moment";
 import Pagination from "../../components/Pagination";
@@ -35,7 +34,6 @@ const ASSIGNEE_PAGE_LIMIT = 10;
 export default function CreateTask() {
   useUserAuth();
   const { user } = useContext(UserContext);
-  const navigate = useNavigate();
 
   const [formData, setFormData] = useState(INITIAL_STATE);
   const [users, setUsers] = useState([]);
@@ -237,8 +235,12 @@ export default function CreateTask() {
       };
 
       await axiosInstance.post(API_PATHS.TASKS.CREATE, payload);
-      toast.success("Task created successfully!");
-      navigate("/admin/dashboard");
+      setFormData(INITIAL_STATE);
+      setNewTodo("");
+      setNewAttachment("");
+      setUserSearch("");
+      setAssigneePage(1);
+      toast.success("Task created successfully. You can create another task.");
     } catch (error) {
       console.error("Error creating task:", error);
       toast.error(error?.response?.data?.message || "Failed to create task");

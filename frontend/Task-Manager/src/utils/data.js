@@ -18,33 +18,33 @@ export const ADMIN_SIDE_MENU_DATA = [
   },
   {
     id: "02",
+    label: "Manager All Task",
+    icon: LuListTodo,
+    path: "/admin/all-user-tasks",
+  },
+  {
+    id: "03",
     label: "Create Task",
     icon: LuSquarePlus,
     path: "/admin/create-task",
   },
   {
-    id: "03",
+    id: "04",
     label: "Manager My Task",
     icon: LuClipboardCheck,
     path: "/admin/tasks",
   },
   {
-    id: "04",
+    id: "05",
     label: "Team Members",
     icon: LuUsers,
     path: "/admin/team-members",
   },
   {
-    id: "05",
+    id: "06",
     label: "Manager User",
     icon: LuUserCog,
     path: "/admin/users",
-  },
-  {
-    id: "06",
-    label: "Manager All Task",
-    icon: LuListTodo,
-    path: "/admin/all-user-tasks",
   },
   {
     id: "07",
