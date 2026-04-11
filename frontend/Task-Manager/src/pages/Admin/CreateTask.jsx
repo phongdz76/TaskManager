@@ -16,6 +16,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../context/userContext";
 import moment from "moment";
+import Pagination from "../../components/Pagination";
 
 const INITIAL_STATE = {
   title: "",
@@ -26,6 +27,8 @@ const INITIAL_STATE = {
   assignedTo: [],
   todoChecklist: [],
 };
+
+const ASSIGNEE_PAGE_LIMIT = 10;
 
 export default function CreateTask() {
   useUserAuth();
@@ -38,6 +41,7 @@ export default function CreateTask() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTodo, setNewTodo] = useState("");
   const [userSearch, setUserSearch] = useState("");
+  const [assigneePage, setAssigneePage] = useState(1);
 
   const fetchUsers = async () => {
     try {
@@ -68,6 +72,7 @@ export default function CreateTask() {
     setFormData(INITIAL_STATE);
     setNewTodo("");
     setUserSearch("");
+    setAssigneePage(1);
     loadInitialData();
     toast.success("Form has been reset");
   };
@@ -109,6 +114,27 @@ export default function CreateTask() {
     const email = (u.email || "").toLowerCase();
     return name.includes(query) || email.includes(query);
   });
+
+  const assigneeTotalPages = Math.max(
+    Math.ceil(filteredUsers.length / ASSIGNEE_PAGE_LIMIT),
+    1,
+  );
+
+  const paginatedUsers = filteredUsers.slice(
+    (assigneePage - 1) * ASSIGNEE_PAGE_LIMIT,
+    assigneePage * ASSIGNEE_PAGE_LIMIT,
+  );
+
+  useEffect(() => {
+    if (assigneePage > assigneeTotalPages) {
+      setAssigneePage(assigneeTotalPages);
+    }
+  }, [assigneePage, assigneeTotalPages]);
+
+  const handleAssigneePageChange = (newPage) => {
+    if (newPage < 1 || newPage > assigneeTotalPages) return;
+    setAssigneePage(newPage);
+  };
 
   // ── Todo Checklist ──
   const handleAddTodo = () => {
@@ -302,15 +328,18 @@ export default function CreateTask() {
                 <input
                   type="text"
                   value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
+                  onChange={(e) => {
+                    setUserSearch(e.target.value);
+                    setAssigneePage(1);
+                  }}
                   placeholder="Search users by name or email..."
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-blue-500 outline-none mb-3 text-sm"
                 />
 
                 {/* User List */}
                 <div className="max-h-[220px] overflow-y-auto rounded-xl border border-gray-100">
-                  {filteredUsers.length > 0 ? (
-                    filteredUsers.map((u) => {
+                  {paginatedUsers.length > 0 ? (
+                    paginatedUsers.map((u) => {
                       const isSelected = formData.assignedTo.includes(u._id);
                       return (
                         <button
@@ -318,9 +347,7 @@ export default function CreateTask() {
                           type="button"
                           onClick={() => toggleAssignee(u._id)}
                           className={`w-full flex items-center gap-3 px-4 py-3 text-left transition border-b border-gray-50 last:border-b-0 ${
-                            isSelected
-                              ? "bg-blue-50/70"
-                              : "hover:bg-gray-50/70"
+                            isSelected ? "bg-blue-50/70" : "hover:bg-gray-50/70"
                           }`}
                         >
                           {u.profileImageUrl ? (
@@ -374,6 +401,17 @@ export default function CreateTask() {
                     </p>
                   )}
                 </div>
+
+                {filteredUsers.length > 0 && assigneeTotalPages > 1 && (
+                  <Pagination
+                    currentPage={assigneePage}
+                    totalPages={assigneeTotalPages}
+                    onPageChange={handleAssigneePageChange}
+                    variant="compact"
+                    buttonType="button"
+                    containerClassName="mt-3"
+                  />
+                )}
               </div>
 
               {/* Todo Checklist Card */}
@@ -526,7 +564,9 @@ export default function CreateTask() {
                       onChange={handleChange}
                       min={
                         formData.startDate
-                          ? new Date(formData.startDate).toISOString().split("T")[0]
+                          ? new Date(formData.startDate)
+                              .toISOString()
+                              .split("T")[0]
                           : new Date().toISOString().split("T")[0]
                       }
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none text-gray-700 text-sm"
@@ -555,8 +595,10 @@ export default function CreateTask() {
                       </div>
                       <p className="text-xs text-blue-600 mt-2">
                         {moment(formData.dueDate).diff(
-                          formData.startDate ? moment(formData.startDate) : moment(),
-                          "days"
+                          formData.startDate
+                            ? moment(formData.startDate)
+                            : moment(),
+                          "days",
                         )}{" "}
                         days remaining
                       </p>

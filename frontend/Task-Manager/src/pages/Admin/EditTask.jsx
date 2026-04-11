@@ -12,8 +12,9 @@ import {
   FaUserPlus,
   FaTimes,
   FaCalendarAlt,
+  FaArrowLeft,
 } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { UserContext } from "../../context/userContext";
 import moment from "moment";
 import Pagination from "../../components/Pagination";
@@ -30,10 +31,11 @@ const INITIAL_STATE = {
 
 const ASSIGNEE_PAGE_LIMIT = 10;
 
-export default function CreateTask() {
+export default function EditTask() {
   useUserAuth();
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
+  const { id } = useParams();
 
   const [formData, setFormData] = useState(INITIAL_STATE);
   const [users, setUsers] = useState([]);
@@ -42,6 +44,11 @@ export default function CreateTask() {
   const [newTodo, setNewTodo] = useState("");
   const [userSearch, setUserSearch] = useState("");
   const [assigneePage, setAssigneePage] = useState(1);
+
+  const isAdmin = user?.role === "admin";
+  const activeMenuLabel = isAdmin ? "Manager My Task" : "My Tasks";
+  const backToTasksPath = isAdmin ? "/admin/tasks" : "/user/my-tasks";
+  const submitRedirectPath = isAdmin ? "/admin/tasks" : "/user/my-tasks";
 
   const fetchUsers = async () => {
     try {
@@ -59,6 +66,24 @@ export default function CreateTask() {
     setLoading(true);
     try {
       await fetchUsers();
+      try {
+        const taskRes = await axiosInstance.get(
+          API_PATHS.TASKS.GET_TASK_BY_ID(id),
+        );
+        const task = taskRes.data;
+        setFormData({
+          title: task.title || "",
+          description: task.description || "",
+          priority: task.priority || "Medium",
+          startDate: task.createdAt ? task.createdAt.split("T")[0] : "",
+          dueDate: task.dueDate ? task.dueDate.split("T")[0] : "",
+          assignedTo: task.assignedTo.map((u) => u._id || u) || [],
+          todoChecklist: task.todoChecklist || [],
+        });
+      } catch (error) {
+        console.error("Failed to fetch task", error);
+        toast.error("Failed to load task details.");
+      }
     } finally {
       setLoading(false);
     }
@@ -184,12 +209,12 @@ export default function CreateTask() {
             : undefined,
       };
 
-      await axiosInstance.post(API_PATHS.TASKS.CREATE, payload);
-      toast.success("Task created successfully!");
-      navigate("/user/dashboard");
+      await axiosInstance.put(API_PATHS.TASKS.UPDATE(id), payload);
+      toast.success("Task updated successfully!");
+      navigate(submitRedirectPath);
     } catch (error) {
-      console.error("Error creating task:", error);
-      toast.error(error?.response?.data?.message || "Failed to create task");
+      console.error("Error updating task:", error);
+      toast.error(error?.response?.data?.message || "Failed to update task");
     } finally {
       setIsSubmitting(false);
     }
@@ -198,18 +223,25 @@ export default function CreateTask() {
   const todayFormatted = moment().format("dddd, MMMM Do YYYY");
 
   return (
-    <DashboardLayout activeMenu="Create Task">
+    <DashboardLayout activeMenu={activeMenuLabel}>
       <div className="max-w-7xl mx-auto pt-4 pb-10 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">
-              Create New Task
-            </h1>
-            <p className="mt-2 font-medium text-gray-700">{todayFormatted}</p>
-            <p className="mt-1 text-gray-500">
-              Fill in the details below to create a new task.
-            </p>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(backToTasksPath)}
+              className="p-3 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors shrink-0"
+              title="Back to Task Manager"
+            >
+              <FaArrowLeft size={20} />
+            </button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800">Edit Task</h1>
+              <p className="mt-2 font-medium text-gray-700">{todayFormatted}</p>
+              <p className="mt-1 text-gray-500">
+                Update the details for this task.
+              </p>
+            </div>
           </div>
           <button
             onClick={handleRefresh}
@@ -337,7 +369,7 @@ export default function CreateTask() {
                 />
 
                 {/* User List */}
-                <div className="max-h-[220px] overflow-y-auto rounded-xl border border-gray-100">
+                <div className="max-h-55 overflow-y-auto rounded-xl border border-gray-100">
                   {paginatedUsers.length > 0 ? (
                     paginatedUsers.map((u) => {
                       const isSelected = formData.assignedTo.includes(u._id);
@@ -534,7 +566,7 @@ export default function CreateTask() {
 
                   {/* Start Date */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <label className="flex text-sm font-medium text-gray-700 mb-2 items-center gap-2">
                       <FaCalendarAlt className="text-green-500" />
                       Start Date
                     </label>
@@ -543,17 +575,16 @@ export default function CreateTask() {
                       name="startDate"
                       value={formData.startDate}
                       onChange={handleChange}
-                      min={new Date().toISOString().split("T")[0]}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none text-gray-700 text-sm"
                     />
                     <p className="text-xs text-gray-400 mt-1">
-                      Defaults to today if not set. Cannot be in the past.
+                      Original start date is preserved.
                     </p>
                   </div>
 
                   {/* Due Date */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <label className="flex text-sm font-medium text-gray-700 mb-2 items-center gap-2">
                       <FaCalendarAlt className="text-red-400" />
                       Due Date
                     </label>
@@ -562,20 +593,13 @@ export default function CreateTask() {
                       name="dueDate"
                       value={formData.dueDate}
                       onChange={handleChange}
-                      min={
-                        formData.startDate
-                          ? new Date(formData.startDate)
-                              .toISOString()
-                              .split("T")[0]
-                          : new Date().toISOString().split("T")[0]
-                      }
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none text-gray-700 text-sm"
                     />
                   </div>
 
                   {/* Date visual */}
                   {formData.dueDate && (
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
+                    <div className="bg-linear-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
                       <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-1">
                         Timeline
                       </p>
@@ -630,9 +654,7 @@ export default function CreateTask() {
                   <div className="flex justify-between">
                     <span className="text-gray-500">Assignees</span>
                     <span className="font-semibold text-gray-800">
-                      {formData.assignedTo.length > 0
-                        ? formData.assignedTo.length
-                        : "You (default)"}
+                      {formData.assignedTo.length}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -660,10 +682,10 @@ export default function CreateTask() {
               >
                 {isSubmitting ? (
                   <>
-                    <FaSpinner className="animate-spin" /> Creating...
+                    <FaSpinner className="animate-spin" /> Updating...
                   </>
                 ) : (
-                  "Create Task"
+                  "Update Task"
                 )}
               </button>
             </div>

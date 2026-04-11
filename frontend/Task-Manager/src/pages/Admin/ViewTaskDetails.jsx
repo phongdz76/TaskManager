@@ -5,5 +5,7 @@ import TaskDetailsPage from "../../components/tasks/TaskDetailsPage";
 export default function ViewTaskDetails() {
   useUserAuth();
 
-  return <TaskDetailsPage activeMenu="My Tasks" backPath="/user/my-tasks" />;
+  return (
+    <TaskDetailsPage activeMenu="Manager My Task" backPath="/admin/tasks" />
+  );
 }

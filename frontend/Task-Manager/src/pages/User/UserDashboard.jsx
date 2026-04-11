@@ -26,6 +26,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import moment from "moment";
+import Pagination from "../../components/Pagination";
 
 const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
   <div className="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between hover:shadow-lg transition-shadow duration-300">
@@ -37,6 +38,8 @@ const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
   </div>
 );
 
+const PAGE_LIMIT = 10;
+
 export default function UserDashboard() {
   useUserAuth();
 
@@ -47,15 +50,18 @@ export default function UserDashboard() {
   const [pieChartData, setPieChartData] = useState([]);
   const [barChartData, setBarChartData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
 
-  const getDashboardData = async () => {
+  const getDashboardData = async (page = currentPage) => {
     setLoading(true);
     try {
       const response = await axiosInstance.get(
-        API_PATHS.TASKS.USER_DASHBOARD_DATA,
+        `${API_PATHS.TASKS.USER_DASHBOARD_DATA}?page=${page}&limit=${PAGE_LIMIT}`,
       );
       const data = response.data;
       setDashboardData(data);
+      setPagination(data.pagination || null);
 
       if (data.statistics) {
         setPieChartData(
@@ -106,8 +112,13 @@ export default function UserDashboard() {
   };
 
   useEffect(() => {
-    getDashboardData();
-  }, []);
+    getDashboardData(currentPage);
+  }, [currentPage]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || (pagination && newPage > pagination.totalPages)) return;
+    setCurrentPage(newPage);
+  };
 
   const stats = dashboardData?.statistics || {};
 
@@ -130,7 +141,7 @@ export default function UserDashboard() {
             </p>
           </div>
           <button
-            onClick={() => getDashboardData()}
+            onClick={() => getDashboardData(currentPage)}
             className="mt-4 md:mt-0 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm flex items-center"
           >
             <FaSpinner className={`mr-2 ${loading ? "animate-spin" : ""}`} />
@@ -355,12 +366,13 @@ export default function UserDashboard() {
                           </td>
                           <td className="py-4 px-4 align-top">
                             <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${task.status === "Pending"
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                                task.status === "Pending"
                                   ? "bg-yellow-50 text-yellow-700 border-yellow-200"
                                   : task.status === "In-Progress"
                                     ? "bg-blue-50 text-blue-700 border-blue-200"
                                     : "bg-green-50 text-green-700 border-green-200"
-                                }`}
+                              }`}
                             >
                               {task.status === "In-Progress"
                                 ? "In Progress"
@@ -369,12 +381,13 @@ export default function UserDashboard() {
                           </td>
                           <td className="py-4 px-4 align-top">
                             <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${task.priority === "Low"
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                                task.priority === "Low"
                                   ? "bg-gray-50 text-gray-700 border-gray-200"
                                   : task.priority === "Medium"
                                     ? "bg-orange-50 text-orange-700 border-orange-200"
                                     : "bg-red-50 text-red-700 border-red-200"
-                                }`}
+                              }`}
                             >
                               {task.priority}
                             </span>
@@ -399,6 +412,17 @@ export default function UserDashboard() {
                   </tbody>
                 </table>
               </div>
+
+              {pagination && pagination.totalPages > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={pagination.totalPages}
+                  totalItems={pagination.totalTasks}
+                  itemLabel="tasks"
+                  onPageChange={handlePageChange}
+                  containerClassName="mt-6 pt-4 border-t border-gray-100"
+                />
+              )}
             </div>
           </>
         )}
