@@ -46,6 +46,49 @@ const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
 
 const STATUS_FILTERS = ["All", "Pending", "In-Progress", "Completed"];
 
+const getStatusBasedProgress = (task) => {
+  const rawProgress =
+    typeof task?.progress === "number"
+      ? Math.max(0, Math.min(100, task.progress))
+      : 0;
+
+  if (task?.status === "Completed") return 100;
+  if (task?.status === "Pending") return 0;
+  if (task?.status === "In-Progress") {
+    return rawProgress > 0 ? Math.min(rawProgress, 99) : 50;
+  }
+
+  return rawProgress;
+};
+
+const getChecklistProgress = (task) => {
+  const checklist = Array.isArray(task?.todoChecklist)
+    ? task.todoChecklist
+    : [];
+  const total = checklist.length;
+
+  if (total === 0) {
+    return {
+      total: 0,
+      completed: 0,
+      progress: getStatusBasedProgress(task),
+    };
+  }
+
+  const completed =
+    typeof task.completedTodoCount === "number"
+      ? task.completedTodoCount
+      : checklist.filter((item) => item.completed).length;
+
+  const safeCompleted = Math.max(0, Math.min(total, completed));
+
+  return {
+    total,
+    completed: safeCompleted,
+    progress: Math.round((safeCompleted / total) * 100),
+  };
+};
+
 export default function ManagerTask() {
   useUserAuth();
   const navigate = useNavigate();
@@ -446,12 +489,15 @@ export default function ManagerTask() {
                 </div>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-200 text-left">
+                <table className="w-full min-w-225 text-left">
                   <thead>
                     <tr className="border-b border-gray-100 uppercase text-xs tracking-wider text-gray-500">
-                      <th className="pb-4 px-4 font-semibold w-[32%]">Title</th>
+                      <th className="pb-4 px-4 font-semibold w-[28%]">Title</th>
                       <th className="pb-4 px-4 font-semibold w-[20%]">
                         Created By
+                      </th>
+                      <th className="pb-4 px-4 font-semibold w-[14%]">
+                        Checklist
                       </th>
                       <th className="pb-4 px-4 font-semibold w-[12%]">
                         Status
@@ -469,137 +515,154 @@ export default function ManagerTask() {
                   </thead>
                   <tbody>
                     {filteredRecentTasks.length > 0 ? (
-                      filteredRecentTasks.map((task) => (
-                        <tr
-                          key={task._id}
-                          className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors group"
-                        >
-                          <td className="py-4 px-4 align-top">
-                            <div className="flex items-start gap-2">
-                              {task.isPinned && (
-                                <FaThumbtack
-                                  className="text-indigo-500 mt-1 shrink-0"
-                                  size={14}
-                                />
-                              )}
-                              <p
-                                className="text-gray-800 font-semibold whitespace-normal wrap-break-word leading-6"
-                                title={task.title}
-                              >
-                                {task.title}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4 align-top">
-                            {task.createdBy ? (
-                              <div className="flex items-center">
-                                {task.createdBy.profileImageUrl ? (
-                                  <img
-                                    src={task.createdBy.profileImageUrl}
-                                    alt={task.createdBy.username}
-                                    className="w-6 h-6 rounded-full object-cover mr-2 border border-gray-200"
+                      filteredRecentTasks.map((task) => {
+                        const checklist = getChecklistProgress(task);
+
+                        return (
+                          <tr
+                            key={task._id}
+                            className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors group"
+                          >
+                            <td className="py-4 px-4 align-top">
+                              <div className="flex items-start gap-2">
+                                {task.isPinned && (
+                                  <FaThumbtack
+                                    className="text-indigo-500 mt-1 shrink-0"
+                                    size={14}
                                   />
-                                ) : (
-                                  <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold mr-2">
-                                    {task.createdBy.username
-                                      .charAt(0)
-                                      .toUpperCase()}
-                                  </div>
                                 )}
-                                <span
-                                  className="text-sm text-gray-700 truncate"
-                                  title={task.createdBy.email}
+                                <p
+                                  className="text-gray-800 font-semibold whitespace-normal wrap-break-word leading-6"
+                                  title={task.title}
                                 >
-                                  {task.createdBy.username}
-                                </span>
+                                  {task.title}
+                                </p>
                               </div>
-                            ) : (
-                              <span className="text-sm text-gray-400 italic">
-                                Unknown
+                            </td>
+                            <td className="py-4 px-4 align-top">
+                              {task.createdBy ? (
+                                <div className="flex items-center">
+                                  {task.createdBy.profileImageUrl ? (
+                                    <img
+                                      src={task.createdBy.profileImageUrl}
+                                      alt={task.createdBy.username}
+                                      className="w-6 h-6 rounded-full object-cover mr-2 border border-gray-200"
+                                    />
+                                  ) : (
+                                    <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold mr-2">
+                                      {task.createdBy.username
+                                        .charAt(0)
+                                        .toUpperCase()}
+                                    </div>
+                                  )}
+                                  <span
+                                    className="text-sm text-gray-700 truncate"
+                                    title={task.createdBy.email}
+                                  >
+                                    {task.createdBy.username}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-400 italic">
+                                  Unknown
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-4 px-4 align-top">
+                              <p className="text-xs font-medium text-gray-600">
+                                {checklist.total > 0
+                                  ? `${checklist.completed}/${checklist.total} completed`
+                                  : `No checklist (${checklist.progress}%)`}
+                              </p>
+                              <div className="mt-2 h-2 rounded-full bg-gray-100 overflow-hidden">
+                                <div
+                                  className="h-full rounded-full bg-blue-500"
+                                  style={{ width: `${checklist.progress}%` }}
+                                ></div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4 align-top">
+                              <select
+                                value={task.status}
+                                onChange={(e) =>
+                                  updateTaskStatus(task._id, e.target.value)
+                                }
+                                className={`appearance-none cursor-pointer px-2.5 py-1 rounded-full text-xs font-medium border outline-none transition-colors ${
+                                  task.status === "Pending"
+                                    ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                    : task.status === "In-Progress"
+                                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                                      : "bg-green-50 text-green-700 border-green-200"
+                                }`}
+                              >
+                                <option value="Pending">Pending</option>
+                                <option value="In-Progress">In Progress</option>
+                                <option value="Completed">Completed</option>
+                              </select>
+                            </td>
+                            <td className="py-4 px-4 align-top">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                                  task.priority === "Low"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : task.priority === "Medium"
+                                      ? "bg-orange-50 text-orange-700 border-orange-200"
+                                      : "bg-red-50 text-red-700 border-red-200"
+                                }`}
+                              >
+                                {task.priority}
                               </span>
-                            )}
-                          </td>
-                          <td className="py-4 px-4 align-top">
-                            <select
-                              value={task.status}
-                              onChange={(e) =>
-                                updateTaskStatus(task._id, e.target.value)
-                              }
-                              className={`appearance-none cursor-pointer px-2.5 py-1 rounded-full text-xs font-medium border outline-none transition-colors ${
-                                task.status === "Pending"
-                                  ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                                  : task.status === "In-Progress"
-                                    ? "bg-blue-50 text-blue-700 border-blue-200"
-                                    : "bg-green-50 text-green-700 border-green-200"
-                              }`}
-                            >
-                              <option value="Pending">Pending</option>
-                              <option value="In-Progress">In Progress</option>
-                              <option value="Completed">Completed</option>
-                            </select>
-                          </td>
-                          <td className="py-4 px-4 align-top">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
-                                task.priority === "Low"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                  : task.priority === "Medium"
-                                    ? "bg-orange-50 text-orange-700 border-orange-200"
-                                    : "bg-red-50 text-red-700 border-red-200"
-                              }`}
-                            >
-                              {task.priority}
-                            </span>
-                          </td>
-                          <td className="py-4 px-4 align-top text-gray-500 text-sm font-medium">
-                            {task.dueDate
-                              ? moment(task.dueDate).format("MMM DD, YYYY")
-                              : "No due date"}
-                          </td>
-                          <td className="py-4 px-4 align-top text-right">
-                            <div className="flex items-center justify-end space-x-2">
-                              <button
-                                onClick={() => togglePinTask(task._id)}
-                                className={`p-2 rounded-lg transition-colors group relative ${task.isPinned ? "text-indigo-600 bg-indigo-50" : "text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"}`}
-                                title={task.isPinned ? "Unpin" : "Pin to top"}
-                              >
-                                <FaThumbtack size={16} />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  navigate(`/admin/task-details/${task._id}`)
-                                }
-                                className="p-2 text-violet-600 hover:bg-violet-50 rounded-lg transition-colors group relative"
-                                title="View Task Details"
-                              >
-                                <FaEye size={16} />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  navigate(`/admin/tasks/edit/${task._id}`)
-                                }
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group relative"
-                                title="Edit Task"
-                              >
-                                <FaEdit size={16} />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  openConfirmModal(task._id, task.title)
-                                }
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors group relative"
-                                title="Delete Task"
-                              >
-                                <FaTrash size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                            </td>
+                            <td className="py-4 px-4 align-top text-gray-500 text-sm font-medium">
+                              {task.dueDate
+                                ? moment(task.dueDate).format("MMM DD, YYYY")
+                                : "No due date"}
+                            </td>
+                            <td className="py-4 px-4 align-top text-right">
+                              <div className="flex items-center justify-end space-x-2">
+                                <button
+                                  onClick={() => togglePinTask(task._id)}
+                                  className={`p-2 rounded-lg transition-colors group relative ${task.isPinned ? "text-indigo-600 bg-indigo-50" : "text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"}`}
+                                  title={task.isPinned ? "Unpin" : "Pin to top"}
+                                >
+                                  <FaThumbtack size={16} />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    navigate(`/admin/task-details/${task._id}`)
+                                  }
+                                  className="p-2 text-violet-600 hover:bg-violet-50 rounded-lg transition-colors group relative"
+                                  title="View Task Details"
+                                >
+                                  <FaEye size={16} />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    navigate(`/admin/tasks/edit/${task._id}`)
+                                  }
+                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group relative"
+                                  title="Edit Task"
+                                >
+                                  <FaEdit size={16} />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    openConfirmModal(task._id, task.title)
+                                  }
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors group relative"
+                                  title="Delete Task"
+                                >
+                                  <FaTrash size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     ) : (
                       <tr>
                         <td
-                          colSpan="6"
+                          colSpan="7"
                           className="py-8 text-center text-gray-500"
                         >
                           No recent tasks found.

@@ -44,6 +44,21 @@ const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
   </div>
 );
 
+const getStatusBasedProgress = (task) => {
+  const rawProgress =
+    typeof task?.progress === "number"
+      ? Math.max(0, Math.min(100, task.progress))
+      : 0;
+
+  if (task?.status === "Completed") return 100;
+  if (task?.status === "Pending") return 0;
+  if (task?.status === "In-Progress") {
+    return rawProgress > 0 ? Math.min(rawProgress, 99) : 50;
+  }
+
+  return rawProgress;
+};
+
 const getChecklistProgress = (task) => {
   const checklist = Array.isArray(task?.todoChecklist)
     ? task.todoChecklist
@@ -54,7 +69,7 @@ const getChecklistProgress = (task) => {
     return {
       total: 0,
       completed: 0,
-      progress: typeof task?.progress === "number" ? task.progress : 0,
+      progress: getStatusBasedProgress(task),
     };
   }
 
@@ -63,10 +78,12 @@ const getChecklistProgress = (task) => {
       ? task.completedTodoCount
       : checklist.filter((item) => item.completed).length;
 
+  const safeCompleted = Math.max(0, Math.min(total, completed));
+
   return {
     total,
-    completed,
-    progress: Math.round((completed / total) * 100),
+    completed: safeCompleted,
+    progress: Math.round((safeCompleted / total) * 100),
   };
 };
 
@@ -296,10 +313,12 @@ export default function MyTasks() {
             </div>
           </div>
 
-          {loading ? (
-            <div className="py-12 flex flex-col items-center justify-center">
-              <FaSpinner className="animate-spin text-blue-500" size={28} />
-              <p className="mt-3 text-sm text-gray-500">Loading tasks...</p>
+          {loading && tasks.length === 0 ? (
+            <div className="min-h-[50vh] flex flex-col items-center justify-center">
+              <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
+              <p className="mt-4 text-gray-500 font-medium">
+                Loading your tasks...
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -386,7 +405,9 @@ export default function MyTasks() {
 
                           <td className="py-4 px-4 align-top">
                             <p className="text-xs font-medium text-gray-600">
-                              {checklist.completed}/{checklist.total} completed
+                              {checklist.total > 0
+                                ? `${checklist.completed}/${checklist.total} completed`
+                                : `No checklist (${checklist.progress}%)`}
                             </p>
                             <div className="mt-2 h-2 rounded-full bg-gray-100 overflow-hidden">
                               <div
