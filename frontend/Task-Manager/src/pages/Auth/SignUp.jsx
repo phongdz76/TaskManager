@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { AiOutlineGoogle } from "react-icons/ai";
@@ -10,11 +10,13 @@ import LoadingRedirect from "../../components/LoadingRedirect";
 import { validateEmail } from "../../utils/helper";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS, buildApiUrl } from "../../utils/apiPaths";
+import { UserContext } from "../../context/userContext";
 
 const PASSWORD_HELPER_TEXT =
   "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
 
 export default function SignUp() {
+  const { updateUser } = useContext(UserContext);
   const [isLoading, setIsLoading] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [userRole, setUserRole] = useState("");
@@ -76,18 +78,16 @@ export default function SignUp() {
         password: formData.password,
       });
 
-      // Save token and user info
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          _id: response.data._id,
-          name: response.data.name,
-          email: response.data.email,
-          role: response.data.role,
-          profileImageUrl: response.data.profileImageUrl,
-        }),
-      );
+      const userData = {
+        _id: response.data._id,
+        name: response.data.name,
+        email: response.data.email,
+        role: response.data.role,
+        profileImageUrl: response.data.profileImageUrl,
+      };
+
+      // Keep auth state in sync so PrivateRoute allows dashboard immediately.
+      updateUser(userData, response.data.token);
 
       toast.success("Account created successfully!");
 
@@ -105,7 +105,11 @@ export default function SignUp() {
         }
       }, 2500);
     } catch (error) {
-      toast.error(error.message || "Something went wrong");
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Something went wrong";
+      toast.error(message);
       setIsLoading(false);
     }
   };
