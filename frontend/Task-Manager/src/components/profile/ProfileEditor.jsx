@@ -6,6 +6,7 @@ import { UserContext } from "../../context/userContext";
 import { API_PATHS } from "../../utils/apiPaths";
 import axiosInstance from "../../utils/axiosInstance";
 import uploadImage from "../../utils/uploadImage";
+import PageLoader from "../common/PageLoader";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_REGEX =
@@ -216,10 +217,7 @@ export default function ProfileEditor() {
   if (showProfileLoader) {
     return (
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="min-h-[50vh] flex flex-col items-center justify-center">
-          <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-500 font-medium">Loading profile...</p>
-        </div>
+        <PageLoader message="Loading profile..." />
       </div>
     );
   }

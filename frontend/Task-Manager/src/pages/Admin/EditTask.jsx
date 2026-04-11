@@ -19,6 +19,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { UserContext } from "../../context/userContext";
 import moment from "moment";
 import Pagination from "../../components/Pagination";
+import PageContainer from "../../components/common/PageContainer";
+import PageLoader from "../../components/common/PageLoader";
 
 const INITIAL_STATE = {
   title: "",
@@ -79,14 +81,22 @@ export default function EditTask() {
           title: task.title || "",
           description: task.description || "",
           priority: task.priority || "Medium",
-          startDate: task.startDate ? task.startDate.split("T")[0] : (task.createdAt ? task.createdAt.split("T")[0] : ""),
+          startDate: task.startDate
+            ? task.startDate.split("T")[0]
+            : task.createdAt
+              ? task.createdAt.split("T")[0]
+              : "",
           dueDate: task.dueDate ? task.dueDate.split("T")[0] : "",
           assignedTo: task.assignedTo.map((u) => u._id || u) || [],
           attachments: Array.isArray(task.attachments) ? task.attachments : [],
           todoChecklist: task.todoChecklist || [],
         });
         setOriginalStartDate(
-          task.startDate ? task.startDate.split("T")[0] : (task.createdAt ? task.createdAt.split("T")[0] : "")
+          task.startDate
+            ? task.startDate.split("T")[0]
+            : task.createdAt
+              ? task.createdAt.split("T")[0]
+              : "",
         );
       } catch (error) {
         console.error("Failed to fetch task", error);
@@ -288,7 +298,7 @@ export default function EditTask() {
 
   return (
     <DashboardLayout activeMenu={activeMenuLabel}>
-      <div className="max-w-7xl mx-auto pt-4 pb-10 animate-fade-in">
+      <PageContainer>
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div className="flex items-center gap-4">
@@ -319,12 +329,7 @@ export default function EditTask() {
 
         {/* Loading */}
         {loading ? (
-          <div className="min-h-[50vh] flex flex-col items-center justify-center">
-            <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-500 font-medium">
-              Loading form data...
-            </p>
-          </div>
+          <PageLoader message="Loading form data..." />
         ) : (
           <form
             onSubmit={handleSubmit}
@@ -825,7 +830,7 @@ export default function EditTask() {
             </div>
           </form>
         )}
-      </div>
+      </PageContainer>
     </DashboardLayout>
   );
 }

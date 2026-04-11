@@ -18,6 +18,8 @@ import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../context/userContext";
 import moment from "moment";
 import Pagination from "../../components/Pagination";
+import PageContainer from "../../components/common/PageContainer";
+import PageLoader from "../../components/common/PageLoader";
 
 const INITIAL_STATE = {
   title: "",
@@ -251,7 +253,7 @@ export default function CreateTask() {
 
   return (
     <DashboardLayout activeMenu="Create Task">
-      <div className="max-w-7xl mx-auto pt-4 pb-10 animate-fade-in">
+      <PageContainer>
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
@@ -275,12 +277,7 @@ export default function CreateTask() {
 
         {/* Loading */}
         {loading ? (
-          <div className="min-h-[50vh] flex flex-col items-center justify-center">
-            <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-500 font-medium">
-              Loading form data...
-            </p>
-          </div>
+          <PageLoader message="Loading form data..." />
         ) : (
           <form
             onSubmit={handleSubmit}
@@ -789,7 +786,7 @@ export default function CreateTask() {
             </div>
           </form>
         )}
-      </div>
+      </PageContainer>
     </DashboardLayout>
   );
 }

@@ -27,6 +27,8 @@ import {
 } from "recharts";
 import moment from "moment";
 import Pagination from "../../components/Pagination";
+import PageContainer from "../../components/common/PageContainer";
+import PageLoader from "../../components/common/PageLoader";
 
 const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
   <div className="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between hover:shadow-lg transition-shadow duration-300">
@@ -124,7 +126,7 @@ export default function UserDashboard() {
 
   return (
     <DashboardLayout activeMenu="Dashboard">
-      <div className="max-w-7xl mx-auto pt-4 pb-10 animate-fade-in">
+      <PageContainer>
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
@@ -150,12 +152,7 @@ export default function UserDashboard() {
         </div>
 
         {loading && !dashboardData ? (
-          <div className="min-h-[50vh] flex flex-col items-center justify-center">
-            <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-500 font-medium">
-              Loading your insights...
-            </p>
-          </div>
+          <PageLoader message="Loading your insights..." />
         ) : (
           <>
             {/* Stats Cards */}
@@ -426,7 +423,7 @@ export default function UserDashboard() {
             </div>
           </>
         )}
-      </div>
+      </PageContainer>
     </DashboardLayout>
   );
 }

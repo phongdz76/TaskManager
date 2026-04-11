@@ -20,6 +20,8 @@ import {
 import moment from "moment";
 import Pagination from "../../components/Pagination";
 import ReportDownloadButton from "../../components/ReportDownloadButton";
+import PageContainer from "../../components/common/PageContainer";
+import PageLoader from "../../components/common/PageLoader";
 
 const STATUS_FILTERS = ["All", "Pending", "In-Progress", "Completed"];
 
@@ -220,7 +222,7 @@ export default function MyTasks() {
 
   return (
     <DashboardLayout activeMenu="My Tasks">
-      <div className="max-w-7xl mx-auto pt-4 pb-10 animate-fade-in">
+      <PageContainer>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">My Tasks</h1>
@@ -231,10 +233,10 @@ export default function MyTasks() {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <ReportDownloadButton 
-              apiPath={API_PATHS.REPORTS.EXPORT_MY_TASKS} 
-              fileName="my_tasks_report.xlsx" 
-              buttonText="Export My Tasks" 
+            <ReportDownloadButton
+              apiPath={API_PATHS.REPORTS.EXPORT_MY_TASKS}
+              fileName="my_tasks_report.xlsx"
+              buttonText="Export My Tasks"
             />
             <button
               onClick={fetchTasks}
@@ -322,12 +324,7 @@ export default function MyTasks() {
           </div>
 
           {loading && tasks.length === 0 ? (
-            <div className="min-h-[50vh] flex flex-col items-center justify-center">
-              <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
-              <p className="mt-4 text-gray-500 font-medium">
-                Loading your tasks...
-              </p>
-            </div>
+            <PageLoader message="Loading your tasks..." />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-225 text-left">
@@ -431,9 +428,10 @@ export default function MyTasks() {
                               onChange={(e) =>
                                 handleUpdateTaskStatus(task._id, e.target.value)
                               }
-                              className={`appearance-none cursor-pointer px-2.5 py-1 rounded-full text-xs font-medium border outline-none transition-colors ${STATUS_STYLES[task.status] ||
+                              className={`appearance-none cursor-pointer px-2.5 py-1 rounded-full text-xs font-medium border outline-none transition-colors ${
+                                STATUS_STYLES[task.status] ||
                                 "bg-gray-50 text-gray-700 border-gray-200"
-                                }`}
+                              }`}
                             >
                               <option value="Pending">Pending</option>
                               <option value="In-Progress">In Progress</option>
@@ -530,7 +528,7 @@ export default function MyTasks() {
             />
           )}
         </div>
-      </div>
+      </PageContainer>
     </DashboardLayout>
   );
 }

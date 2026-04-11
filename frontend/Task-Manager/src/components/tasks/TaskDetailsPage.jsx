@@ -17,6 +17,7 @@ import {
 import DashboardLayout from "../layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
+import PageContainer from "../common/PageContainer";
 
 const STATUS_STYLES = {
   Pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
@@ -229,7 +230,7 @@ export default function TaskDetailsPage({
 
   return (
     <DashboardLayout activeMenu={activeMenu}>
-      <div className="max-w-7xl mx-auto pt-4 pb-10 animate-fade-in">
+      <PageContainer>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
             <button
@@ -556,7 +557,7 @@ export default function TaskDetailsPage({
             </div>
           </div>
         )}
-      </div>
+      </PageContainer>
     </DashboardLayout>
   );
 }

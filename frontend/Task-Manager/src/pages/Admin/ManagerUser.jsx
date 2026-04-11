@@ -14,6 +14,8 @@ import {
 import toast from "react-hot-toast";
 import Pagination from "../../components/Pagination";
 import ReportDownloadButton from "../../components/ReportDownloadButton";
+import PageContainer from "../../components/common/PageContainer";
+import PageLoader from "../../components/common/PageLoader";
 
 const PAGE_LIMIT = 10;
 
@@ -149,7 +151,7 @@ export default function ManagerUser() {
 
   return (
     <DashboardLayout activeMenu="Manager User">
-      <div className="max-w-7xl mx-auto pt-4 pb-10 animate-fade-in">
+      <PageContainer>
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
@@ -159,10 +161,10 @@ export default function ManagerUser() {
             </p>
           </div>
           <div className="flex gap-3">
-            <ReportDownloadButton 
-              apiPath={API_PATHS.REPORTS.EXPORT_USERS} 
-              fileName="users_report.xlsx" 
-              buttonText="Export Users" 
+            <ReportDownloadButton
+              apiPath={API_PATHS.REPORTS.EXPORT_USERS}
+              fileName="users_report.xlsx"
+              buttonText="Export Users"
             />
             <button
               onClick={fetchUsers}
@@ -208,10 +210,7 @@ export default function ManagerUser() {
 
         {/* Content Section */}
         {loading && users.length === 0 ? (
-          <div className="min-h-[50vh] flex flex-col items-center justify-center">
-            <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-500 font-medium">Loading users...</p>
-          </div>
+          <PageLoader message="Loading users..." />
         ) : (
           <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
@@ -269,10 +268,11 @@ export default function ManagerUser() {
                           {/* Role */}
                           <td className="py-4 px-6">
                             <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${isAdmin
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                                isAdmin
                                   ? "bg-purple-50 text-purple-700 border-purple-200"
                                   : "bg-gray-50 text-gray-700 border-gray-200"
-                                }`}
+                              }`}
                             >
                               {isAdmin ? (
                                 <FaUserShield className="mr-1.5" />
@@ -387,7 +387,7 @@ export default function ManagerUser() {
             )}
           </div>
         )}
-      </div>
+      </PageContainer>
 
       {/* Custom Confirmation Modal */}
       {confirmModal.isOpen && (
@@ -410,10 +410,11 @@ export default function ManagerUser() {
               </button>
               <button
                 onClick={executeAction}
-                className={`px-4 py-2 font-medium text-white rounded-lg transition-colors ${confirmModal.actionType === "DELETE"
+                className={`px-4 py-2 font-medium text-white rounded-lg transition-colors ${
+                  confirmModal.actionType === "DELETE"
                     ? "bg-red-600 hover:bg-red-700"
                     : "bg-indigo-600 hover:bg-indigo-700"
-                  }`}
+                }`}
               >
                 Confirm
               </button>

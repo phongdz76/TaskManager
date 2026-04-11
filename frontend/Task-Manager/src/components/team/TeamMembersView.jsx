@@ -7,6 +7,8 @@ import toast from "react-hot-toast";
 import Pagination from "../Pagination";
 import useUserAuth from "../../hooks/useUserAuth";
 import ReportDownloadButton from "../ReportDownloadButton";
+import PageContainer from "../common/PageContainer";
+import PageLoader from "../common/PageLoader";
 
 const StatItem = ({ label, value, valueClass }) => (
   <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
@@ -20,6 +22,7 @@ const PAGE_LIMIT = 10;
 export default function TeamMembersView({ activeMenu, subtitle }) {
   const { user } = useUserAuth();
   const isAdmin = user?.role === "admin";
+  const currentUserId = (user?._id || user?.id || "").toString();
 
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -115,15 +118,19 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
   }, []);
 
   const filteredMembers = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return members;
+    const visibleMembers = currentUserId
+      ? members.filter((member) => member?._id?.toString() !== currentUserId)
+      : members;
 
-    return members.filter((member) => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return visibleMembers;
+
+    return visibleMembers.filter((member) => {
       const username = (member?.username || "").toLowerCase();
       const email = (member?.email || "").toLowerCase();
       return username.includes(query) || email.includes(query);
     });
-  }, [members, searchQuery]);
+  }, [members, searchQuery, currentUserId]);
 
   const totalPages = Math.max(
     Math.ceil(filteredMembers.length / PAGE_LIMIT),
@@ -148,7 +155,7 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
 
   return (
     <DashboardLayout activeMenu={activeMenu}>
-      <div className="max-w-7xl mx-auto pt-4 pb-10 animate-fade-in">
+      <PageContainer>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Team Members</h1>
@@ -157,10 +164,10 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
 
           <div className="flex flex-wrap gap-3">
             {isAdmin && (
-              <ReportDownloadButton 
-                apiPath={API_PATHS.REPORTS.EXPORT_USERS} 
-                fileName="team_members_report.xlsx" 
-                buttonText="Export Team Members" 
+              <ReportDownloadButton
+                apiPath={API_PATHS.REPORTS.EXPORT_USERS}
+                fileName="team_members_report.xlsx"
+                buttonText="Export Team Members"
               />
             )}
             <button
@@ -193,12 +200,7 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
         </div>
 
         {loading ? (
-          <div className="min-h-[50vh] flex flex-col items-center justify-center">
-            <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-500 font-medium">
-              Loading team members...
-            </p>
-          </div>
+          <PageLoader message="Loading team members..." />
         ) : filteredMembers.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -274,7 +276,7 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
             No team members found in tasks.
           </div>
         )}
-      </div>
+      </PageContainer>
     </DashboardLayout>
   );
 }
