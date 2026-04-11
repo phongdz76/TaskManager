@@ -13,6 +13,7 @@ import {
   FaTimes,
   FaCalendarAlt,
   FaArrowLeft,
+  FaLink,
 } from "react-icons/fa";
 import { useNavigate, useParams } from "react-router-dom";
 import { UserContext } from "../../context/userContext";
@@ -26,6 +27,7 @@ const INITIAL_STATE = {
   startDate: "",
   dueDate: "",
   assignedTo: [],
+  attachments: [],
   todoChecklist: [],
 };
 
@@ -42,6 +44,7 @@ export default function EditTask() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTodo, setNewTodo] = useState("");
+  const [newAttachment, setNewAttachment] = useState("");
   const [userSearch, setUserSearch] = useState("");
   const [assigneePage, setAssigneePage] = useState(1);
 
@@ -78,6 +81,7 @@ export default function EditTask() {
           startDate: task.createdAt ? task.createdAt.split("T")[0] : "",
           dueDate: task.dueDate ? task.dueDate.split("T")[0] : "",
           assignedTo: task.assignedTo.map((u) => u._id || u) || [],
+          attachments: Array.isArray(task.attachments) ? task.attachments : [],
           todoChecklist: task.todoChecklist || [],
         });
       } catch (error) {
@@ -96,6 +100,7 @@ export default function EditTask() {
   const handleRefresh = () => {
     setFormData(INITIAL_STATE);
     setNewTodo("");
+    setNewAttachment("");
     setUserSearch("");
     setAssigneePage(1);
     loadInitialData();
@@ -161,6 +166,52 @@ export default function EditTask() {
     setAssigneePage(newPage);
   };
 
+  const normalizeAttachmentUrl = (value) => {
+    const trimmedValue = value.trim();
+    if (!trimmedValue) return null;
+
+    const candidate = /^https?:\/\//i.test(trimmedValue)
+      ? trimmedValue
+      : `https://${trimmedValue}`;
+
+    try {
+      const parsedUrl = new URL(candidate);
+      if (!["http:", "https:"].includes(parsedUrl.protocol)) return null;
+      return parsedUrl.toString();
+    } catch {
+      return null;
+    }
+  };
+
+  const handleAddAttachment = () => {
+    const normalizedAttachment = normalizeAttachmentUrl(newAttachment);
+
+    if (!normalizedAttachment) {
+      toast.error("Please enter a valid file link");
+      return;
+    }
+
+    if (formData.attachments.includes(normalizedAttachment)) {
+      toast.error("This file link is already added");
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      attachments: [...prev.attachments, normalizedAttachment],
+    }));
+    setNewAttachment("");
+  };
+
+  const handleRemoveAttachment = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      attachments: prev.attachments.filter(
+        (_, itemIndex) => itemIndex !== index,
+      ),
+    }));
+  };
+
   // ── Todo Checklist ──
   const handleAddTodo = () => {
     if (!newTodo.trim()) return;
@@ -203,6 +254,7 @@ export default function EditTask() {
           : undefined,
         assignedTo:
           formData.assignedTo.length > 0 ? formData.assignedTo : undefined,
+        attachments: formData.attachments,
         todoChecklist:
           formData.todoChecklist.length > 0
             ? formData.todoChecklist
@@ -313,6 +365,68 @@ export default function EditTask() {
                     <p className="text-xs text-gray-400 mt-1 text-right">
                       {formData.description.length}/2000
                     </p>
+                  </div>
+
+                  <div>
+                    <label className="flex text-sm font-medium text-gray-700 mb-2 items-center gap-2">
+                      <FaLink className="text-indigo-500" />
+                      Attachments (File Links)
+                    </label>
+
+                    <div className="flex gap-3 mb-3">
+                      <input
+                        type="text"
+                        value={newAttachment}
+                        onChange={(e) => setNewAttachment(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddAttachment();
+                          }
+                        }}
+                        placeholder="Paste file URL (Google Drive, Dropbox, etc.)"
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 focus:border-blue-500 outline-none text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddAttachment}
+                        className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium flex items-center gap-2 transition text-sm"
+                      >
+                        <FaPlus size={12} /> Add Link
+                      </button>
+                    </div>
+
+                    {formData.attachments.length > 0 ? (
+                      <ul className="space-y-2">
+                        {formData.attachments.map((attachment, index) => (
+                          <li
+                            key={`${attachment}-${index}`}
+                            className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100"
+                          >
+                            <a
+                              href={attachment}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sm text-blue-600 hover:text-blue-700 hover:underline truncate"
+                              title={attachment}
+                            >
+                              {attachment}
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveAttachment(index)}
+                              className="text-gray-300 hover:text-red-500 transition p-1 shrink-0"
+                            >
+                              <FaTrash size={14} />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-gray-400 italic py-2">
+                        No file links added yet.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -661,6 +775,12 @@ export default function EditTask() {
                     <span className="text-gray-500">Sub-tasks</span>
                     <span className="font-semibold text-gray-800">
                       {formData.todoChecklist.length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Attachments</span>
+                    <span className="font-semibold text-gray-800">
+                      {formData.attachments.length}
                     </span>
                   </div>
                   <div className="flex justify-between">
