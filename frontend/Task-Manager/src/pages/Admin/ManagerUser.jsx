@@ -13,6 +13,7 @@ import {
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 import Pagination from "../../components/Pagination";
+import ReportDownloadButton from "../../components/ReportDownloadButton";
 
 const PAGE_LIMIT = 10;
 
@@ -157,14 +158,21 @@ export default function ManagerUser() {
               Manage roles, permissions, and accounts for your platform users.
             </p>
           </div>
-          <button
-            onClick={fetchUsers}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm flex items-center"
-            disabled={loading}
-          >
-            <FaSpinner className={`mr-2 ${loading ? "animate-spin" : ""}`} />
-            Refresh Data
-          </button>
+          <div className="flex gap-3">
+            <ReportDownloadButton 
+              apiPath={API_PATHS.REPORTS.EXPORT_USERS} 
+              fileName="users_report.xlsx" 
+              buttonText="Export Users" 
+            />
+            <button
+              onClick={fetchUsers}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm flex items-center"
+              disabled={loading}
+            >
+              <FaSpinner className={`mr-2 ${loading ? "animate-spin" : ""}`} />
+              Refresh Data
+            </button>
+          </div>
         </div>
 
         {/* Search and Filter Bar */}
@@ -261,11 +269,10 @@ export default function ManagerUser() {
                           {/* Role */}
                           <td className="py-4 px-6">
                             <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
-                                isAdmin
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${isAdmin
                                   ? "bg-purple-50 text-purple-700 border-purple-200"
                                   : "bg-gray-50 text-gray-700 border-gray-200"
-                              }`}
+                                }`}
                             >
                               {isAdmin ? (
                                 <FaUserShield className="mr-1.5" />
@@ -403,11 +410,10 @@ export default function ManagerUser() {
               </button>
               <button
                 onClick={executeAction}
-                className={`px-4 py-2 font-medium text-white rounded-lg transition-colors ${
-                  confirmModal.actionType === "DELETE"
+                className={`px-4 py-2 font-medium text-white rounded-lg transition-colors ${confirmModal.actionType === "DELETE"
                     ? "bg-red-600 hover:bg-red-700"
                     : "bg-indigo-600 hover:bg-indigo-700"
-                }`}
+                  }`}
               >
                 Confirm
               </button>

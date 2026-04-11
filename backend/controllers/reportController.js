@@ -12,11 +12,11 @@ export const exportTasksReport = async (req, res) => {
     const workbook = new excelJS.Workbook();
     const worksheet = workbook.addWorksheet("Tasks Report");
     worksheet.columns = [
-      { header: "Task ID", key: "id", width: 30 },
       { header: "Title", key: "title", width: 30 },
       { header: "Description", key: "description", width: 50 },
       { header: "Priority", key: "priority", width: 15 },
       { header: "Status", key: "status", width: 15 },
+      { header: "Progress", key: "progress", width: 12 },
       { header: "Assigned To", key: "assignedTo", width: 30 },
       { header: "Due Date", key: "dueDate", width: 20 },
     ];
@@ -25,11 +25,11 @@ export const exportTasksReport = async (req, res) => {
         .map((user) => user.username)
         .join(", ");
       worksheet.addRow({
-        id: task._id,
         title: task.title,
         description: task.description,
         priority: task.priority,
         status: task.status,
+        progress: `${task.progress || 0}%`,
         assignedTo: assignedTo || "Unassigned",
         dueDate: task.dueDate
           ? task.dueDate.toISOString().split("T")[0]
@@ -146,7 +146,6 @@ export const exportMyTasks = async (req, res) => {
     const worksheet = workbook.addWorksheet("My Tasks");
 
     worksheet.columns = [
-      { header: "Task ID", key: "id", width: 30 },
       { header: "Title", key: "title", width: 30 },
       { header: "Description", key: "description", width: 50 },
       { header: "Priority", key: "priority", width: 15 },
@@ -164,7 +163,6 @@ export const exportMyTasks = async (req, res) => {
       const createdBy = task.createdBy?.username || "Unknown";
 
       worksheet.addRow({
-        id: task._id,
         title: task.title,
         description: task.description,
         priority: task.priority,
