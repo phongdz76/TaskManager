@@ -97,6 +97,15 @@ export const updateUserRole = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    // Prevent editing another admin's role
+    if (
+      user.role === "admin" &&
+      req.user._id.toString() !== user._id.toString()
+    ) {
+      return res.status(403).json({ message: "Cannot edit other admins" });
+    }
+
     user.role = role;
     await user.save();
     res.status(200).json({ message: "User role updated successfully" });
@@ -114,6 +123,12 @@ export const deleteUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    // Prevent deleting admins
+    if (user.role === "admin") {
+      return res.status(403).json({ message: "Cannot delete admin accounts" });
+    }
+
     // Optional: Also delete tasks assigned to this user
     await Task.deleteMany({ assignedTo: user._id });
     await User.findByIdAndDelete(req.params.id);

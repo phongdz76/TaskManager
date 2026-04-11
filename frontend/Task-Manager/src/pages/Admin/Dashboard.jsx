@@ -26,6 +26,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import moment from "moment";
+import Pagination from "../../components/Pagination";
 
 const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
   <div className="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between hover:shadow-lg transition-shadow duration-300">
@@ -37,6 +38,8 @@ const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
   </div>
 );
 
+const PAGE_LIMIT = 10;
+
 export default function Dashboard() {
   useUserAuth();
 
@@ -47,13 +50,18 @@ export default function Dashboard() {
   const [pieChartData, setPieChartData] = useState([]);
   const [barChartData, setBarChartData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
 
-  const getDashboardData = async () => {
+  const getDashboardData = async (page = currentPage) => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get(API_PATHS.TASKS.DASHBOARD_DATA);
+      const response = await axiosInstance.get(
+        `${API_PATHS.TASKS.DASHBOARD_DATA}?page=${page}&limit=${PAGE_LIMIT}`,
+      );
       const data = response.data;
       setDashboardData(data);
+      setPagination(data.pagination || null);
 
       if (data.statistics) {
         setPieChartData(
@@ -104,8 +112,13 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    getDashboardData();
-  }, []);
+    getDashboardData(currentPage);
+  }, [currentPage]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || (pagination && newPage > pagination.totalPages)) return;
+    setCurrentPage(newPage);
+  };
 
   const stats = dashboardData?.statistics || {};
 
@@ -130,7 +143,7 @@ export default function Dashboard() {
             </p>
           </div>
           <button
-            onClick={() => getDashboardData()}
+            onClick={() => getDashboardData(currentPage)}
             className="mt-4 md:mt-0 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm flex items-center"
           >
             <FaSpinner className={`mr-2 ${loading ? "animate-spin" : ""}`} />
@@ -316,24 +329,27 @@ export default function Dashboard() {
                   Recent Tasks
                 </h3>
                 <button
-                  onClick={() => navigate("/admin/tasks")}
+                  onClick={() => navigate("/admin/all-user-tasks")}
                   className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
                 >
                   View All
                 </button>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full table-fixed text-left">
+                <table className="w-full min-w-[800px] text-left">
                   <thead>
                     <tr className="border-b border-gray-100 uppercase text-xs tracking-wider text-gray-500">
-                      <th className="pb-4 px-4 font-semibold w-[46%]">Title</th>
-                      <th className="pb-4 px-4 font-semibold w-[18%]">
+                      <th className="pb-4 px-4 font-semibold w-[36%]">Title</th>
+                      <th className="pb-4 px-4 font-semibold w-[20%]">
+                        Created By
+                      </th>
+                      <th className="pb-4 px-4 font-semibold w-[14%]">
                         Status
                       </th>
-                      <th className="pb-4 px-4 font-semibold w-[16%]">
+                      <th className="pb-4 px-4 font-semibold w-[14%]">
                         Priority
                       </th>
-                      <th className="pb-4 px-4 font-semibold w-[20%]">
+                      <th className="pb-4 px-4 font-semibold w-[16%]">
                         Due Date
                       </th>
                     </tr>
@@ -354,13 +370,43 @@ export default function Dashboard() {
                             </p>
                           </td>
                           <td className="py-4 px-4 align-top">
+                            {task.createdBy ? (
+                              <div className="flex items-center">
+                                {task.createdBy.profileImageUrl ? (
+                                  <img
+                                    src={task.createdBy.profileImageUrl}
+                                    alt={task.createdBy.username}
+                                    className="w-6 h-6 rounded-full object-cover mr-2 border border-gray-200"
+                                  />
+                                ) : (
+                                  <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold mr-2">
+                                    {task.createdBy.username
+                                      .charAt(0)
+                                      .toUpperCase()}
+                                  </div>
+                                )}
+                                <span
+                                  className="text-sm text-gray-700 truncate"
+                                  title={task.createdBy.email}
+                                >
+                                  {task.createdBy.username}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400 italic">
+                                Unknown
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-4 px-4 align-top">
                             <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${task.status === "Pending"
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                                task.status === "Pending"
                                   ? "bg-yellow-50 text-yellow-700 border-yellow-200"
                                   : task.status === "In-Progress"
                                     ? "bg-blue-50 text-blue-700 border-blue-200"
                                     : "bg-green-50 text-green-700 border-green-200"
-                                }`}
+                              }`}
                             >
                               {task.status === "In-Progress"
                                 ? "In Progress"
@@ -369,12 +415,13 @@ export default function Dashboard() {
                           </td>
                           <td className="py-4 px-4 align-top">
                             <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${task.priority === "Low"
-                                  ? "bg-gray-50 text-gray-700 border-gray-200"
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                                task.priority === "Low"
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                   : task.priority === "Medium"
                                     ? "bg-orange-50 text-orange-700 border-orange-200"
                                     : "bg-red-50 text-red-700 border-red-200"
-                                }`}
+                              }`}
                             >
                               {task.priority}
                             </span>
@@ -389,7 +436,7 @@ export default function Dashboard() {
                     ) : (
                       <tr>
                         <td
-                          colSpan="4"
+                          colSpan="5"
                           className="py-8 text-center text-gray-500"
                         >
                           No recent tasks found.
@@ -399,6 +446,17 @@ export default function Dashboard() {
                   </tbody>
                 </table>
               </div>
+
+              {pagination && pagination.totalPages > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={pagination.totalPages}
+                  totalItems={pagination.totalTasks}
+                  itemLabel="tasks"
+                  onPageChange={handlePageChange}
+                  containerClassName="mt-6 pt-4 border-t border-gray-100"
+                />
+              )}
             </div>
           </>
         )}

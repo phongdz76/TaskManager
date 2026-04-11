@@ -14,7 +14,6 @@ export default function SideMenu({ activeMenu }) {
     user?.profileImageUrl?.trim?.() || user?.avatar?.trim?.() || "";
 
   const handleLogout = () => {
-    localStorage.clear();
     clearUser();
     navigate("/login");
   };

@@ -55,6 +55,10 @@ const taskSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    isPinned: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );

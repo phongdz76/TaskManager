@@ -51,6 +51,9 @@ const validateAssignedUsersExist = async (assignedIds) => {
 export const getTasks = async (req, res) => {
   try {
     const { status } = req.query;
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
+    const skip = (page - 1) * limit;
     let filter = {};
 
     if (status) {
@@ -62,20 +65,24 @@ export const getTasks = async (req, res) => {
       filter.status = status;
     }
 
-    let tasks;
-    if (req.user.role === "admin") {
-      tasks = await Task.find(filter)
-        .populate("assignedTo", "username email profileImageUrl")
-        .populate("createdBy", "username email profileImageUrl");
-    } else {
-      // User can see tasks assigned to them OR tasks they created
-      tasks = await Task.find({
-        ...filter,
-        $or: [{ assignedTo: req.user._id }, { createdBy: req.user._id }],
-      })
-        .populate("assignedTo", "username email profileImageUrl")
-        .populate("createdBy", "username email profileImageUrl");
-    }
+    const baseUserFilter =
+      req.user.role === "admin"
+        ? {}
+        : { $or: [{ assignedTo: req.user._id }, { createdBy: req.user._id }] };
+
+    const listFilter = {
+      ...baseUserFilter,
+      ...filter,
+    };
+
+    let tasks = await Task.find(listFilter)
+      .sort({ isPinned: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("assignedTo", "username email profileImageUrl")
+      .populate("createdBy", "username email profileImageUrl");
+
+    const totalFilteredTasks = await Task.countDocuments(listFilter);
 
     // Add completed todoChecklist count to each task
     tasks = tasks.map((task) => {
@@ -89,27 +96,19 @@ export const getTasks = async (req, res) => {
     });
 
     // Status summary count
-    const baseUserFilter =
-      req.user.role === "admin"
-        ? {}
-        : { $or: [{ assignedTo: req.user._id }, { createdBy: req.user._id }] };
-
     const allTasks = await Task.countDocuments(baseUserFilter);
 
     const pendingTasks = await Task.countDocuments({
-      ...filter,
       status: "Pending",
       ...baseUserFilter,
     });
 
     const inProgressTasks = await Task.countDocuments({
-      ...filter,
       status: "In-Progress",
       ...baseUserFilter,
     });
 
     const completedTasks = await Task.countDocuments({
-      ...filter,
       status: "Completed",
       ...baseUserFilter,
     });
@@ -121,6 +120,12 @@ export const getTasks = async (req, res) => {
         pending: pendingTasks,
         inProgress: inProgressTasks,
         completed: completedTasks,
+      },
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalFilteredTasks / limit),
+        totalTasks: totalFilteredTasks,
+        limit,
       },
     });
   } catch (error) {
@@ -204,10 +209,18 @@ export const createTask = async (req, res) => {
     }
 
     // Validate startDate
-    if (startDate !== undefined && startDate !== null && !isValidDate(startDate)) {
+    if (
+      startDate !== undefined &&
+      startDate !== null &&
+      !isValidDate(startDate)
+    ) {
       return res.status(400).json({ message: "Invalid start date" });
     }
-    if (startDate !== undefined && startDate !== null && hasPastDate(startDate)) {
+    if (
+      startDate !== undefined &&
+      startDate !== null &&
+      hasPastDate(startDate)
+    ) {
       return res.status(400).json({
         message: "Start date cannot be in the past",
       });
@@ -416,10 +429,18 @@ export const updateTask = async (req, res) => {
     if (dueDate !== undefined && dueDate !== null && !isValidDate(dueDate)) {
       return res.status(400).json({ message: "Invalid due date" });
     }
+    // Only block past dates if the user is actually changing to a new date
+    // (Allow keeping the original date even if it's in the past)
     if (dueDate !== undefined && dueDate !== null && hasPastDate(dueDate)) {
-      return res.status(400).json({
-        message: "Due date cannot be in the past",
-      });
+      const existingDueDate = task.dueDate
+        ? new Date(task.dueDate).toISOString().split("T")[0]
+        : null;
+      const newDueDate = new Date(dueDate).toISOString().split("T")[0];
+      if (existingDueDate !== newDueDate) {
+        return res.status(400).json({
+          message: "Due date cannot be in the past",
+        });
+      }
     }
 
     const normalizedAssignedTo = normalizeAssignedTo(assignedTo);
@@ -591,31 +612,43 @@ export const updateTaskStatus = async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    if (status === "Completed") {
-      // When switching to Completed: mark all checklist items as true
+    // If task has NO checklist items, allow free status change
+    if (!task.todoChecklist || task.todoChecklist.length === 0) {
       task.status = status;
-      task.todoChecklist.forEach((item) => (item.completed = true));
-      task.progress = 100;
-    } else {
-      // When switching back to Pending/In-Progress: validate checklist state first
-      const completedCount = task.todoChecklist.filter(
-        (item) => item.completed,
-      ).length;
-      const calculatedProgress =
-        task.todoChecklist.length > 0
-          ? Math.round((completedCount / task.todoChecklist.length) * 100)
-          : 0;
-
-      // Prevent setting to Pending/In-Progress when all checklist items are completed
-      if (calculatedProgress === 100 && task.todoChecklist.length > 0) {
-        return res.status(400).json({
-          message:
-            "Cannot set status to Pending/In-Progress when all checklist items are completed. Please uncomplete some items first or use PUT /api/tasks/:id/todo endpoint.",
-        });
+      if (status === "Completed") {
+        task.progress = 100;
+      } else if (status === "In-Progress") {
+        task.progress = 50;
+      } else {
+        task.progress = 0;
       }
+    } else {
+      // Task has checklist items
+      if (status === "Completed") {
+        // When switching to Completed: mark all checklist items as true
+        task.todoChecklist.forEach((item) => (item.completed = true));
+        task.progress = 100;
+        task.status = status;
+      } else {
+        // Prevent contradicting checklist state
+        const completedCount = task.todoChecklist.filter(
+          (item) => item.completed,
+        ).length;
+        const calculatedProgress =
+          task.todoChecklist.length > 0
+            ? Math.round((completedCount / task.todoChecklist.length) * 100)
+            : 0;
 
-      task.status = status;
-      task.progress = calculatedProgress;
+        if (calculatedProgress === 100) {
+          return res.status(400).json({
+            message:
+              "Cannot change status when all checklist items are completed. Uncomplete some items first.",
+          });
+        }
+
+        task.status = status;
+        task.progress = calculatedProgress;
+      }
     }
 
     await task.save();
@@ -713,6 +746,10 @@ export const getDashboardData = async (req, res) => {
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Access denied" });
     }
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
+    const skip = (page - 1) * limit;
+
     const totalTasks = await Task.countDocuments();
     const pendingTasks = await Task.countDocuments({ status: "Pending" });
     const inProgressTasks = await Task.countDocuments({
@@ -759,11 +796,15 @@ export const getDashboardData = async (req, res) => {
       return acc;
     }, {});
 
-    // Fetch recent 10 tasks
+    // Fetch paginated recent tasks
     const recentTasks = await Task.find()
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .select("title status priority dueDate createdAt");
+      .sort({ isPinned: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .select("title status priority dueDate createdAt createdBy isPinned")
+      .populate("createdBy", "username profileImageUrl email");
+
+    const totalPages = Math.max(Math.ceil(totalTasks / limit), 1);
 
     res.json({
       statistics: {
@@ -778,6 +819,12 @@ export const getDashboardData = async (req, res) => {
         taskPriorityLevels,
       },
       recentTasks,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalTasks,
+        limit,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -790,6 +837,9 @@ export const getDashboardData = async (req, res) => {
 export const getUserDashboardData = async (req, res) => {
   try {
     const userId = req.user._id;
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
+    const skip = (page - 1) * limit;
 
     // User sees tasks assigned to them OR tasks they created
     const userFilter = {
@@ -851,11 +901,15 @@ export const getUserDashboardData = async (req, res) => {
       return acc;
     }, {});
 
-    // Fetch recent 10 tasks for user
+    // Fetch paginated tasks for user
     const recentTasks = await Task.find(userFilter)
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .select("title status priority dueDate createdAt");
+      .sort({ isPinned: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .select("title status priority dueDate createdAt createdBy isPinned")
+      .populate("createdBy", "username profileImageUrl email");
+
+    const totalPages = Math.max(Math.ceil(totalTasks / limit), 1);
 
     res.json({
       statistics: {
@@ -870,7 +924,46 @@ export const getUserDashboardData = async (req, res) => {
         taskPriorityLevels,
       },
       recentTasks,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalTasks,
+        limit,
+      },
     });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc   Toggle pin status of a task
+// @route  PATCH /api/tasks/:id/pin
+// @access Private
+export const togglePinTask = async (req, res) => {
+  try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid task ID" });
+    }
+
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    // Check permission: admin, assigned user, or task creator
+    const isAdmin = req.user.role === "admin";
+    const isAssigned = isTaskAssignedToUser(task.assignedTo, req.user._id);
+    const creatorId = task.createdBy?._id || task.createdBy;
+    const isCreator = creatorId?.toString() === req.user._id.toString();
+
+    if (!isAdmin && !isAssigned && !isCreator) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    task.isPinned = !task.isPinned;
+    await task.save();
+
+    res.json({ message: "Task pin status updated", isPinned: task.isPinned });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -886,4 +979,5 @@ export default {
   updateTaskChecklist,
   getDashboardData,
   getUserDashboardData,
+  togglePinTask,
 };

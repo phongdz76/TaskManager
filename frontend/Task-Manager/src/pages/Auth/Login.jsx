@@ -111,7 +111,11 @@ export default function Login() {
         }
       }, 2500);
     } catch (error) {
-      toast.error(error.message || "Something went wrong");
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Something went wrong";
+      toast.error(message);
       setIsLoading(false);
     }
   };

@@ -17,10 +17,12 @@ import OAuthCallback from "./pages/Auth/OAuthCallback";
 // Admin Pages
 import AdminDashboard from "./pages/Admin/Dashboard";
 import AdminCreateTask from "./pages/Admin/CreateTask";
+import AdminEditTask from "./pages/Admin/EditTask";
 import ManagerTask from "./pages/Admin/ManagerTask";
+import AdminViewTaskDetails from "./pages/Admin/ViewTaskDetails";
 import ManagerUser from "./pages/Admin/ManagerUser";
 import TeamMembers from "./pages/Admin/TeamMembers";
-import AllUserTasks from "./pages/Admin/AllUserTasks";
+import AllUserTasks from "./pages/Admin/ManagerAllUserTasks";
 import AdminProfile from "./pages/Admin/Profile";
 
 // User Pages
@@ -56,6 +58,12 @@ export default function App() {
             <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/create-task" element={<AdminCreateTask />} />
+              <Route path="/admin/tasks/create" element={<AdminCreateTask />} />
+              <Route path="/admin/tasks/edit/:id" element={<AdminEditTask />} />
+              <Route
+                path="/admin/task-details/:id"
+                element={<AdminViewTaskDetails />}
+              />
               <Route path="/admin/tasks" element={<ManagerTask />} />
               <Route path="/admin/team-members" element={<TeamMembers />} />
               <Route path="/admin/users" element={<ManagerUser />} />
@@ -67,6 +75,7 @@ export default function App() {
             <Route element={<PrivateRoute allowedRoles={["user"]} />}>
               <Route path="/user/dashboard" element={<UserDashboard />} />
               <Route path="/user/create-task" element={<UserCreateTask />} />
+              <Route path="/user/tasks/edit/:id" element={<AdminEditTask />} />
               <Route path="/user/my-tasks" element={<MyTasks />} />
               <Route path="/user/team-members" element={<UserTeamMembers />} />
               <Route path="/user/profile" element={<UserProfile />} />
