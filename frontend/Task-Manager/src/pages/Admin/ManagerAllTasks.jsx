@@ -28,6 +28,8 @@ import {
 import moment from "moment";
 import Pagination from "../../components/Pagination";
 import ReportDownloadButton from "../../components/ReportDownloadButton";
+import PageContainer from "../../components/common/PageContainer";
+import PageLoader from "../../components/common/PageLoader";
 
 const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
   <div className="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between hover:shadow-lg transition-shadow duration-300">
@@ -239,7 +241,7 @@ export default function ManagerAllTasks() {
 
   return (
     <DashboardLayout activeMenu="Manager All Task">
-      <div className="max-w-7xl mx-auto pt-4 pb-10 animate-fade-in">
+      <PageContainer>
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
@@ -251,10 +253,10 @@ export default function ManagerAllTasks() {
             </p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
-            <ReportDownloadButton 
-              apiPath={API_PATHS.REPORTS.EXPORT_TASKS} 
-              fileName="all_tasks_report.xlsx" 
-              buttonText="Export Tasks" 
+            <ReportDownloadButton
+              apiPath={API_PATHS.REPORTS.EXPORT_TASKS}
+              fileName="all_tasks_report.xlsx"
+              buttonText="Export Tasks"
             />
             <button
               onClick={() => getTasks(currentPage, statusFilter)}
@@ -267,12 +269,7 @@ export default function ManagerAllTasks() {
         </div>
 
         {loading && tasks.length === 0 ? (
-          <div className="min-h-[50vh] flex flex-col items-center justify-center">
-            <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-500 font-medium">
-              Loading users tasks...
-            </p>
-          </div>
+          <PageLoader message="Loading users tasks..." />
         ) : (
           <>
             {/* Stats Cards */}
@@ -602,7 +599,7 @@ export default function ManagerAllTasks() {
             </div>
           </>
         )}
-      </div>
+      </PageContainer>
 
       {/* Confirmation Modal */}
       {confirmModal.isOpen && (

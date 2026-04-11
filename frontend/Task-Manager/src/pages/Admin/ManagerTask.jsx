@@ -34,6 +34,8 @@ import {
 import moment from "moment";
 import Pagination from "../../components/Pagination";
 import ReportDownloadButton from "../../components/ReportDownloadButton";
+import PageContainer from "../../components/common/PageContainer";
+import PageLoader from "../../components/common/PageLoader";
 
 const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
   <div className="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between hover:shadow-lg transition-shadow duration-300">
@@ -257,7 +259,7 @@ export default function ManagerTask() {
 
   return (
     <DashboardLayout activeMenu="Manager My Task">
-      <div className="max-w-7xl mx-auto pt-4 pb-10 animate-fade-in">
+      <PageContainer>
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
@@ -269,10 +271,10 @@ export default function ManagerTask() {
             </p>
           </div>
           <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
-            <ReportDownloadButton 
-              apiPath={API_PATHS.REPORTS.EXPORT_MY_TASKS} 
-              fileName="my_tasks_report.xlsx" 
-              buttonText="Export My Tasks" 
+            <ReportDownloadButton
+              apiPath={API_PATHS.REPORTS.EXPORT_MY_TASKS}
+              fileName="my_tasks_report.xlsx"
+              buttonText="Export My Tasks"
             />
             <button
               onClick={() => getDashboardData()}
@@ -285,12 +287,7 @@ export default function ManagerTask() {
         </div>
 
         {loading && !dashboardData ? (
-          <div className="min-h-[50vh] flex flex-col items-center justify-center">
-            <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-500 font-medium">
-              Loading your tasks...
-            </p>
-          </div>
+          <PageLoader message="Loading your tasks..." />
         ) : (
           <>
             {/* Stats Cards */}
@@ -595,12 +592,13 @@ export default function ManagerTask() {
                                 onChange={(e) =>
                                   updateTaskStatus(task._id, e.target.value)
                                 }
-                                className={`appearance-none cursor-pointer px-2.5 py-1 rounded-full text-xs font-medium border outline-none transition-colors ${task.status === "Pending"
+                                className={`appearance-none cursor-pointer px-2.5 py-1 rounded-full text-xs font-medium border outline-none transition-colors ${
+                                  task.status === "Pending"
                                     ? "bg-yellow-50 text-yellow-700 border-yellow-200"
                                     : task.status === "In-Progress"
                                       ? "bg-blue-50 text-blue-700 border-blue-200"
                                       : "bg-green-50 text-green-700 border-green-200"
-                                  }`}
+                                }`}
                               >
                                 <option value="Pending">Pending</option>
                                 <option value="In-Progress">In Progress</option>
@@ -609,12 +607,13 @@ export default function ManagerTask() {
                             </td>
                             <td className="py-4 px-4 align-top">
                               <span
-                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${task.priority === "Low"
+                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                                  task.priority === "Low"
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                     : task.priority === "Medium"
                                       ? "bg-orange-50 text-orange-700 border-orange-200"
                                       : "bg-red-50 text-red-700 border-red-200"
-                                  }`}
+                                }`}
                               >
                                 {task.priority}
                               </span>
@@ -693,7 +692,7 @@ export default function ManagerTask() {
             </div>
           </>
         )}
-      </div>
+      </PageContainer>
 
       {/* Confirmation Modal */}
       {confirmModal.isOpen && (
