@@ -135,7 +135,7 @@ export default function UserDashboard() {
             <p className="mt-2 text-gray-500">
               Welcome back,{" "}
               <span className="font-medium text-gray-700">
-                {user?.username || "User"}
+                {user?.name || user?.username || "User"}
               </span>
               . Here's what's happening today.
             </p>

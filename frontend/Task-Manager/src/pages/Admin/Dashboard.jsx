@@ -137,7 +137,7 @@ export default function Dashboard() {
             <p className="mt-2 text-gray-500">
               Welcome back,{" "}
               <span className="font-medium text-gray-700">
-                {user?.username || "Admin"}
+                {user?.name || user?.username || "Admin"}
               </span>
               . Here's what's happening today.
             </p>
