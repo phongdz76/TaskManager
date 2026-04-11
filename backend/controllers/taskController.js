@@ -797,12 +797,25 @@ export const getDashboardData = async (req, res) => {
     }, {});
 
     // Fetch paginated recent tasks
-    const recentTasks = await Task.find()
+    const recentTaskDocs = await Task.find()
       .sort({ isPinned: -1, createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .select("title status priority dueDate createdAt createdBy isPinned")
+      .select(
+        "title status priority dueDate createdAt createdBy isPinned todoChecklist progress",
+      )
       .populate("createdBy", "username profileImageUrl email");
+
+    const recentTasks = recentTaskDocs.map((task) => {
+      const completedTodoCount = Array.isArray(task.todoChecklist)
+        ? task.todoChecklist.filter((item) => item.completed).length
+        : 0;
+
+      return {
+        ...task.toObject(),
+        completedTodoCount,
+      };
+    });
 
     const totalPages = Math.max(Math.ceil(totalTasks / limit), 1);
 
@@ -902,12 +915,25 @@ export const getUserDashboardData = async (req, res) => {
     }, {});
 
     // Fetch paginated tasks for user
-    const recentTasks = await Task.find(userFilter)
+    const recentTaskDocs = await Task.find(userFilter)
       .sort({ isPinned: -1, createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .select("title status priority dueDate createdAt createdBy isPinned")
+      .select(
+        "title status priority dueDate createdAt createdBy isPinned todoChecklist progress",
+      )
       .populate("createdBy", "username profileImageUrl email");
+
+    const recentTasks = recentTaskDocs.map((task) => {
+      const completedTodoCount = Array.isArray(task.todoChecklist)
+        ? task.todoChecklist.filter((item) => item.completed).length
+        : 0;
+
+      return {
+        ...task.toObject(),
+        completedTodoCount,
+      };
+    });
 
     const totalPages = Math.max(Math.ceil(totalTasks / limit), 1);
 

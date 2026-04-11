@@ -71,6 +71,19 @@ const resolveAttachmentHref = (value) => {
   }
 };
 
+const getStatusBasedProgress = (status, progress) => {
+  const rawProgress =
+    typeof progress === "number" ? Math.max(0, Math.min(100, progress)) : 0;
+
+  if (status === "Completed") return 100;
+  if (status === "Pending") return 0;
+  if (status === "In-Progress") {
+    return rawProgress > 0 ? Math.min(rawProgress, 99) : 50;
+  }
+
+  return rawProgress;
+};
+
 const getAttachmentLabel = (value, index) => {
   const href = resolveAttachmentHref(value);
   if (!href) return `Attachment ${index + 1}`;
@@ -144,10 +157,13 @@ export default function TaskDetailsPage({
   const checklistProgress = useMemo(() => {
     const total = checklistDraft.length;
     const completed = checklistDraft.filter((item) => item.completed).length;
-    const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const progress =
+      total > 0
+        ? Math.round((completed / total) * 100)
+        : getStatusBasedProgress(task?.status, task?.progress);
 
     return { total, completed, progress };
-  }, [checklistDraft]);
+  }, [checklistDraft, task]);
 
   const hasChecklistChanges = useMemo(() => {
     return JSON.stringify(checklistDraft) !== JSON.stringify(baseChecklist);
@@ -387,7 +403,8 @@ export default function TaskDetailsPage({
                   </>
                 ) : (
                   <p className="text-sm text-gray-500">
-                    This task has no checklist items.
+                    This task has no checklist items. Progress is currently
+                    based on task status ({checklistProgress.progress}%).
                   </p>
                 )}
               </div>
