@@ -36,6 +36,9 @@ export default function ProfileEditor() {
   const [minimumLoaderDone, setMinimumLoaderDone] = useState(false);
 
   const imageUrl = formData.profileImageUrl?.trim() || "";
+  const isGoogleOnlyAccount =
+    Boolean(user?.googleId) && user?.hasPassword === false;
+  const requiresCurrentPassword = !isGoogleOnlyAccount;
 
   useEffect(() => {
     setFormData(buildInitialForm(user));
@@ -91,7 +94,7 @@ export default function ProfileEditor() {
     }
 
     if (formData.newPassword) {
-      if (!formData.currentPassword) {
+      if (requiresCurrentPassword && !formData.currentPassword) {
         newErrors.currentPassword =
           "Current password is required to set a new password";
       }
@@ -169,7 +172,9 @@ export default function ProfileEditor() {
     if (nextImage !== currentImage) payload.profileImageUrl = nextImage;
 
     if (formData.newPassword) {
-      payload.currentPassword = formData.currentPassword;
+      if (requiresCurrentPassword) {
+        payload.currentPassword = formData.currentPassword;
+      }
       payload.newPassword = formData.newPassword;
     }
 
@@ -192,6 +197,11 @@ export default function ProfileEditor() {
         email: response.data.email,
         role: response.data.role || user?.role || "user",
         profileImageUrl: response.data.profileImageUrl || "",
+        googleId: response.data.googleId ?? user?.googleId ?? null,
+        hasPassword:
+          typeof response.data.hasPassword === "boolean"
+            ? response.data.hasPassword
+            : user?.hasPassword,
       };
 
       const token = response.data.token || localStorage.getItem("token");
@@ -283,16 +293,25 @@ export default function ProfileEditor() {
             placeholder="Enter your email"
           />
 
-          <Input
-            id="currentPassword"
-            label="Current Password"
-            type="password"
-            value={formData.currentPassword}
-            onChange={handleInputChange}
-            error={errors.currentPassword}
-            disabled={saving || uploadingImage}
-            placeholder="Required only when setting a new password"
-          />
+          {isGoogleOnlyAccount && (
+            <p className="text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+              This account uses Google Sign-In. You can set a password now to
+              also log in with email/password. Current password is not required.
+            </p>
+          )}
+
+          {!isGoogleOnlyAccount && (
+            <Input
+              id="currentPassword"
+              label="Current Password"
+              type="password"
+              value={formData.currentPassword}
+              onChange={handleInputChange}
+              error={errors.currentPassword}
+              disabled={saving || uploadingImage}
+              placeholder="Required only when setting a new password"
+            />
+          )}
 
           <Input
             id="newPassword"
@@ -302,7 +321,11 @@ export default function ProfileEditor() {
             onChange={handleInputChange}
             error={errors.newPassword}
             disabled={saving || uploadingImage}
-            placeholder="Leave blank if you do not want to change password"
+            placeholder={
+              isGoogleOnlyAccount
+                ? "Set a password for email/password login"
+                : "Leave blank if you do not want to change password"
+            }
           />
 
           <div className="flex gap-3 pt-2">

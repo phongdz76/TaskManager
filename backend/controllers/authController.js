@@ -26,9 +26,6 @@ const PASSWORD_MESSAGE =
 // @access  Public
 export const registerUser = async (req, res) => {
   try {
-    // const { username, email, password, profileImageUrl, adminInviteToken } =
-    //   req.body;
-
     const { username, email, password, profileImageUrl } = req.body;
 
     // --- Validation (placed first, before any DB operations) ---
@@ -57,15 +54,6 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // Determine user role: Admin if correct invite token is provided, otherwise regular user
-    // let role = "user";
-    // if (
-    //   adminInviteToken &&
-    //   adminInviteToken === process.env.ADMIN_INVITE_TOKEN
-    // ) {
-    //   role = "admin";
-    // }
-
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -76,8 +64,7 @@ export const registerUser = async (req, res) => {
       email,
       password: hashedPassword,
       profileImageUrl,
-      // role,
-      role: "user", // By default, all new sign-ups are "user". Only admins can promote roles later.
+      role: "user", // Self-registration always creates a regular user.
     });
 
     res.status(201).json({
@@ -243,12 +230,19 @@ export const resetPassword = async (req, res) => {
 // @access  Private
 export const getUserProfile = async (req, res) => {
   try {
-    // req.user is set by protect middleware (without password field)
-    const user = await User.findById(req.user._id).select("-password");
+    // req.user is set by protect middleware; load full user to derive hasPassword
+    const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.status(200).json(user);
+
+    const userObj = user.toObject();
+    delete userObj.password;
+
+    res.status(200).json({
+      ...userObj,
+      hasPassword: Boolean(user.password),
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -277,17 +271,10 @@ export const updateUserProfile = async (req, res) => {
     if (email && !EMAIL_REGEX.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
     }
-    if (newPassword) {
-      if (!currentPassword) {
-        return res.status(400).json({
-          message: "Current password is required to set a new password",
-        });
-      }
-      if (!PASSWORD_REGEX.test(newPassword)) {
-        return res.status(400).json({
-          message: PASSWORD_MESSAGE,
-        });
-      }
+    if (newPassword && !PASSWORD_REGEX.test(newPassword)) {
+      return res.status(400).json({
+        message: PASSWORD_MESSAGE,
+      });
     }
 
     const user = await User.findById(req.user._id);
@@ -295,14 +282,25 @@ export const updateUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Validate current password before allowing password change
+    // Password update rules:
+    // - Accounts with existing password must provide currentPassword.
+    // - Google-only accounts (password is null) can set first password without currentPassword.
     if (newPassword) {
-      const isMatch = await bcrypt.compare(currentPassword, user.password);
-      if (!isMatch) {
-        return res
-          .status(401)
-          .json({ message: "Current password is incorrect" });
+      if (user.password) {
+        if (!currentPassword) {
+          return res.status(400).json({
+            message: "Current password is required to set a new password",
+          });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+          return res
+            .status(401)
+            .json({ message: "Current password is incorrect" });
+        }
       }
+
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(newPassword, salt);
     }
@@ -324,9 +322,12 @@ export const updateUserProfile = async (req, res) => {
     res.status(200).json({
       _id: user._id,
       name: user.username,
+      username: user.username,
       email: user.email,
       profileImageUrl: user.profileImageUrl,
       role: user.role,
+      googleId: user.googleId,
+      hasPassword: Boolean(user.password),
       token: generateToken(user._id),
     });
   } catch (error) {
