@@ -15,6 +15,9 @@ import { UserContext } from "../../context/userContext";
 const PASSWORD_HELPER_TEXT =
   "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
 
+const PASSWORD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+
 export default function SignUp() {
   const { updateUser } = useContext(UserContext);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,8 +38,8 @@ export default function SignUp() {
 
     if (!formData.username.trim()) {
       newErrors.username = "Username is required";
-    } else if (formData.username.length < 3) {
-      newErrors.username = "Username must be at least 3 characters";
+    } else if (formData.username.trim().length < 2) {
+      newErrors.username = "Username must be at least 2 characters";
     }
 
     if (!formData.email.trim()) {
@@ -47,9 +50,9 @@ export default function SignUp() {
 
     if (!formData.password) {
       newErrors.password = "Password is required";
-    } else if (formData.password.length < 8) {
+    } else if (!PASSWORD_REGEX.test(formData.password)) {
       newErrors.password =
-        "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character ";
+        "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character";
     }
 
     if (!formData.confirmPassword) {

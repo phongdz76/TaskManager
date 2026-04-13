@@ -21,14 +21,48 @@ const PASSWORD_REGEX =
 const PASSWORD_MESSAGE =
   "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character";
 
+const normalizeOptionalHttpUrl = (value) => {
+  // undefined means field is not provided; keep current value in update flow
+  if (value === undefined) {
+    return { isValid: true, value: undefined };
+  }
+
+  // null means explicitly clear the image
+  if (value === null) {
+    return { isValid: true, value: null };
+  }
+
+  if (typeof value !== "string") {
+    return { isValid: false, value: null };
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return { isValid: true, value: null };
+  }
+
+  if (trimmed.length > 500) {
+    return { isValid: false, value: null };
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      return { isValid: false, value: null };
+    }
+
+    return { isValid: true, value: parsed.toString() };
+  } catch {
+    return { isValid: false, value: null };
+  }
+};
+
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
 export const registerUser = async (req, res) => {
   try {
-    const { username, email, password, profileImageUrl } = req.body;
-
-    // --- Validation (placed first, before any DB operations) ---
+    const { username, email, password, adminInviteToken } = req.body;
     if (!username || !email || !password) {
       return res
         .status(400)
@@ -54,6 +88,14 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
+    let role = "user";
+    if (
+      adminInviteToken &&
+      adminInviteToken === process.env.ADMIN_INVITE_TOKEN
+    ) {
+      role = "admin";
+    }
+
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -63,7 +105,7 @@ export const registerUser = async (req, res) => {
       username: username.trim(),
       email,
       password: hashedPassword,
-      profileImageUrl,
+      adminInviteToken, // Store the invite token if provided (optional, can be removed if not needed after registration)
       role: "user", // Self-registration always creates a regular user.
     });
 
@@ -71,7 +113,7 @@ export const registerUser = async (req, res) => {
       _id: user._id,
       name: user.username,
       email: user.email,
-      profileImageUrl: user.profileImageUrl,
+      adminInviteToken: user.adminInviteToken,
       role: user.role,
       token: generateToken(user._id),
     });
@@ -255,8 +297,12 @@ export const updateUserProfile = async (req, res) => {
   try {
     const { username, email, profileImageUrl, currentPassword, newPassword } =
       req.body;
+    const normalizedProfileImageUrl = normalizeOptionalHttpUrl(profileImageUrl);
 
     // --- Validation ---
+    if (!normalizedProfileImageUrl.isValid) {
+      return res.status(400).json({ message: "Invalid profile image URL" });
+    }
     if (!username && !email && profileImageUrl === undefined && !newPassword) {
       return res.status(400).json({ message: "No fields provided to update" });
     }
@@ -315,7 +361,8 @@ export const updateUserProfile = async (req, res) => {
     }
 
     if (username) user.username = username.trim();
-    if (profileImageUrl !== undefined) user.profileImageUrl = profileImageUrl;
+    if (profileImageUrl !== undefined)
+      user.profileImageUrl = normalizedProfileImageUrl.value;
 
     await user.save();
 
@@ -393,13 +440,20 @@ export const googleCallback = async (req, res) => {
 
     // 3. Find or create user in DB
     let user = await User.findOne({ googleId: googleUser.id });
+    const normalizedGooglePicture = normalizeOptionalHttpUrl(
+      googleUser.picture,
+    );
     if (!user) {
       user = await User.findOne({ email: googleUser.email });
       if (user) {
         // Link Google ID to existing email account
         user.googleId = googleUser.id;
-        if (!user.profileImageUrl && googleUser.picture) {
-          user.profileImageUrl = googleUser.picture;
+        if (
+          !user.profileImageUrl &&
+          normalizedGooglePicture.isValid &&
+          normalizedGooglePicture.value
+        ) {
+          user.profileImageUrl = normalizedGooglePicture.value;
         }
         await user.save();
       } else {
@@ -408,7 +462,10 @@ export const googleCallback = async (req, res) => {
           googleId: googleUser.id,
           username: googleUser.name,
           email: googleUser.email,
-          profileImageUrl: googleUser.picture || null,
+          profileImageUrl:
+            normalizedGooglePicture.isValid && normalizedGooglePicture.value
+              ? normalizedGooglePicture.value
+              : null,
           role: "user",
         });
       }

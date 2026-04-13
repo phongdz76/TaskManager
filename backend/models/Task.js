@@ -48,6 +48,7 @@ const taskSchema = new mongoose.Schema(
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      required: true,
     },
     attachments: [
       {
@@ -58,6 +59,8 @@ const taskSchema = new mongoose.Schema(
     progress: {
       type: Number,
       default: 0,
+      min: 0,
+      max: 100,
     },
     isPinned: {
       type: Boolean,

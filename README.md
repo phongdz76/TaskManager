@@ -1,28 +1,53 @@
 # Task Manager Monorepo
 
-Task Manager is a full-stack web application for managing users, tasks, and reports.
+Task Manager is a full-stack app for authentication, task management, notifications, and reporting.
+
+## Main Features
+
+- Email/password auth + Google OAuth
+- Forgot/reset password by email (token expiry: 15 minutes)
+- Role-based app flow (`admin`, `user`)
+- Task CRUD with:
+  - checklist-based progress auto-sync
+  - status update endpoint
+  - pin/unpin task
+  - overdue filtering
+- In-app notifications (polling on frontend)
+- Excel exports for tasks, users, and team summary
 
 ## Project Layout
 
 ```
 TaskManager/
-├── backend/                  # Node.js + Express + MongoDB API
-└── frontend/
-    └── Task-Manager/         # React + Vite client app
+|-- backend/                     # Node.js + Express + MongoDB API
+`-- frontend/
+    `-- Task-Manager/            # React + Vite client app
 ```
+
+## Quick File Map (File Nam O Dau)
+
+- `backend/server.js`: app bootstrap, CORS, JSON middleware, route mounting
+- `backend/routes/`: route definitions by module (`auth`, `users`, `tasks`, `reports`, `notifications`)
+- `backend/controllers/`: request validation + business logic
+- `backend/models/`: Mongoose schemas (`User`, `Task`, `Notification`)
+- `backend/utils/teamMembersSummary.js`: shared team statistics logic
+- `frontend/Task-Manager/src/App.jsx`: routing tree for auth/admin/user pages
+- `frontend/Task-Manager/src/context/userContext.jsx`: auth state bootstrap and storage sync
+- `frontend/Task-Manager/src/utils/apiPaths.js`: centralized API endpoints
+- `frontend/Task-Manager/src/components/layouts/NotificationDropdown.jsx`: notification UI + polling actions
 
 ## Tech Stack
 
-- Backend: Node.js, Express 5, MongoDB (Mongoose), JWT, Cloudinary, Nodemailer
-- Frontend: React 19, Vite 7, React Router, Axios, Tailwind CSS
+- Backend: Node.js, Express 5, MongoDB (Mongoose), JWT, Nodemailer, Multer, Cloudinary, ExcelJS
+- Frontend: React 19, Vite 7, React Router, Axios, Tailwind CSS, Recharts
 
 ## Prerequisites
 
 - Node.js 18+
 - npm 9+
 - MongoDB connection string
-- Cloudinary account (for image upload)
-- SMTP credentials (for forgot-password email)
+- Cloudinary account (image upload)
+- Gmail SMTP App Password (forgot/reset password)
 
 ## Environment Variables
 
@@ -45,6 +70,9 @@ CLOUDINARY_API_SECRET=your_api_secret
 
 EMAIL_USER=your_email
 EMAIL_PASS=your_app_password
+
+# Optional: currently registration still creates role=user
+ADMIN_INVITE_TOKEN=optional_value
 ```
 
 Create `frontend/Task-Manager/.env` (optional):
@@ -53,11 +81,11 @@ Create `frontend/Task-Manager/.env` (optional):
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-If not provided, frontend falls back to `http://localhost:8000`.
+If not set, frontend defaults to `http://localhost:8000`.
 
 ## Run Locally
 
-### 1) Start backend
+### 1) Backend
 
 ```bash
 cd backend
@@ -65,7 +93,7 @@ npm install
 npm run dev
 ```
 
-### 2) Start frontend
+### 2) Frontend
 
 ```bash
 cd frontend/Task-Manager
@@ -73,49 +101,46 @@ npm install
 npm run dev
 ```
 
-Frontend runs on Vite default port (usually `http://localhost:5173`).
+## API Mount Points
 
-## Build for Production
-
-```bash
-cd frontend/Task-Manager
-npm run build
-npm run preview
-```
-
-```bash
-cd backend
-npm start
-```
+- `/api/auth`
+- `/api/users`
+- `/api/tasks`
+- `/api/reports`
+- `/api/notifications`
 
 ## Commit Convention
 
-Use Conventional Commits:
+Su dung chuan Conventional Commits:
 
 ```
-<type>(<scope>): <short description>
+<type>(<scope>): <mo ta ngan gon>
 ```
 
-Types:
+- `type`:
+  - `feat`: them tinh nang
+  - `fix`: sua bug
+  - `chore`: thay doi lat vat (build, config, tool)
+  - `refactor`: cai thien code khong doi logic
+  - `docs`: thay doi document
+  - `test`: them hoac chinh sua test
 
-- feat: add new feature
-- fix: bug fix
-- chore: tooling/config/build change
-- refactor: internal code improvement without behavior change
-- docs: documentation change
-- test: add or update tests
+Vi du:
 
-Examples:
+- `feat(auth): add JWT authentication middleware`
+- `fix(order): correct total calculation rounding issue`
+- `chore(ci): add GitHub Actions workflow for tests`
 
-- feat(auth): add JWT authentication middleware
-- fix(task): correct task status transition logic
-- chore(ci): add GitHub Actions workflow for tests
+## Push Branch dev
 
-## Notes
+```bash
+git checkout dev
+git add .
+git commit -m "docs(readme): update readme to match current backend frontend logic"
+git push origin dev
+```
 
-- Backend API routes are mounted under:
-  - `/api/auth`
-  - `/api/users`
-  - `/api/tasks`
-  - `/api/reports`
-- Keep secrets in `.env` only. Never commit real credentials.
+## Security Notes
+
+- Keep all secrets in `.env`
+- Never commit real credentials or tokens

@@ -1,6 +1,6 @@
 # Task Manager Frontend
 
-Frontend client for the Task Manager system, built with React and Vite.
+Frontend app for Task Manager, built with React + Vite.
 
 ## Stack
 
@@ -10,6 +10,8 @@ Frontend client for the Task Manager system, built with React and Vite.
 - Axios
 - Tailwind CSS
 - Recharts
+- react-hot-toast
+- moment
 
 ## Requirements
 
@@ -17,57 +19,105 @@ Frontend client for the Task Manager system, built with React and Vite.
 - npm 9+
 - Running backend API
 
-## Environment Variables
+## Environment Variable
 
-Create a `.env` file in this folder:
+Create `.env` in this folder:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-If this variable is not set, the app still defaults to `http://localhost:8000`.
+If not set, frontend falls back to `http://localhost:8000`.
 
-## Install
+## Install and Run
 
 ```bash
 npm install
+npm run dev
 ```
 
 ## Available Scripts
 
 ```bash
-npm run dev      # Start local development server
-npm run build    # Create production build
-npm run preview  # Preview production build
-npm run lint     # Run ESLint
-```
-
-## Run in Development
-
-```bash
 npm run dev
+npm run build
+npm run preview
+npm run lint
 ```
 
-Open the URL shown by Vite (usually `http://localhost:5173`).
+## App Routing
 
-## Main Folders
+Routes are defined in `src/App.jsx` with role-based guards via `src/routes/PrivateRoute.jsx`.
 
+Public routes:
+
+- `/login`
+- `/register`
+- `/forgot-password`
+- `/reset-password`
+- `/oauth-callback`
+
+Admin routes:
+
+- `/admin/dashboard`
+- `/admin/create-task`
+- `/admin/tasks/create`
+- `/admin/tasks/edit/:id`
+- `/admin/task-details/:id`
+- `/admin/tasks`
+- `/admin/team-members`
+- `/admin/users`
+- `/admin/all-user-tasks`
+- `/admin/profile`
+
+User routes:
+
+- `/user/dashboard`
+- `/user/create-task`
+- `/user/tasks/edit/:id`
+- `/user/my-tasks`
+- `/user/task-details/:id`
+- `/user/team-members`
+- `/user/profile`
+
+## Key File Map (File Nam O Dau)
+
+- `src/App.jsx`: route tree and role segmentation
+- `src/context/userContext.jsx`: user auth state, token bootstrap from localStorage
+- `src/utils/apiPaths.js`: centralized endpoint paths
+- `src/utils/axiosInstance.js`: auth header + 401 redirect interceptor
+- `src/components/layouts/NavBar.jsx`: top bar and notification dropdown mount
+- `src/components/layouts/NotificationDropdown.jsx`: notifications polling and actions
+- `src/pages/Admin/*`: admin pages
+- `src/pages/User/*`: user pages
+- `src/pages/Auth/*`: auth pages
+
+## Notification UI Behavior
+
+`NotificationDropdown` supports:
+
+- Poll notifications every 5 seconds
+- Show unread badge on bell icon
+- Mark single item as read on click
+- Mark all as read
+- Clear all notifications with confirm modal
+
+## API Integration
+
+- Base URL: `src/utils/apiPaths.js`
+- Auth token attached by Axios request interceptor
+- On HTTP 401 with auth header, token is cleared and user is redirected to `/login`
+
+## Conventional Commit
+
+Use:
+
+```text
+<type>(<scope>): <short description>
 ```
-src/
-├── components/   # Shared UI and feature components
-├── pages/        # Route-level pages (Admin/Auth/User)
-├── context/      # App-level contexts
-├── hooks/        # Custom hooks
-├── routes/       # Route guards and route helpers
-└── utils/        # API config and helper utilities
-```
 
-## Backend Integration
+Examples:
 
-- API base URL is configured in `src/utils/apiPaths.js`.
-- Axios instance with auth token interceptor is in `src/utils/axiosInstance.js`.
-
-## Notes
-
-- Make sure backend CORS allows your frontend URL.
-- Keep all environment values in `.env`, never hardcode secrets.
+- `feat(frontend): add notification dropdown polling`
+- `fix(auth-ui): redirect to login on expired token`
+- `docs(frontend): refresh route documentation`
