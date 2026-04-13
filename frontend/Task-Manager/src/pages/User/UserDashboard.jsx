@@ -380,7 +380,7 @@ export default function UserDashboard() {
                             <span
                               className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
                                 task.priority === "Low"
-                                  ? "bg-gray-50 text-gray-700 border-gray-200"
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                   : task.priority === "Medium"
                                     ? "bg-orange-50 text-orange-700 border-orange-200"
                                     : "bg-red-50 text-red-700 border-red-200"
