@@ -80,7 +80,7 @@ User routes:
 - `/user/team-members`
 - `/user/profile`
 
-## Key File Map (File Nam O Dau)
+## Key File Map 
 
 - `src/App.jsx`: route tree and role segmentation
 - `src/context/userContext.jsx`: user auth state, token bootstrap from localStorage
