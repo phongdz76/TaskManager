@@ -90,11 +90,12 @@ export default function TaskListTable({
       <table className="w-full min-w-225 text-left">
         <thead>
           <tr className="border-b border-gray-100 uppercase text-xs tracking-wider text-gray-500">
-            <th className="pb-4 px-4 font-semibold w-[28%]">Title</th>
-            <th className="pb-4 px-4 font-semibold w-[20%]">Created By</th>
-            <th className="pb-4 px-4 font-semibold w-[14%]">Checklist</th>
-            <th className="pb-4 px-4 font-semibold w-[12%]">Status</th>
-            <th className="pb-4 px-4 font-semibold w-[12%]">Priority</th>
+            <th className="pb-4 px-4 font-semibold w-[24%]">Title</th>
+            <th className="pb-4 px-4 font-semibold w-[16%]">Created By</th>
+            <th className="pb-4 px-4 font-semibold w-[12%]">Checklist</th>
+            <th className="pb-4 px-4 font-semibold w-[11%]">Status</th>
+            <th className="pb-4 px-4 font-semibold w-[10%]">Priority</th>
+            <th className="pb-4 px-4 font-semibold w-[11%]">Created</th>
             <th className="pb-4 px-4 font-semibold w-[12%]">Due Date</th>
             <th className="pb-4 px-4 font-semibold w-[12%] text-right">
               Actions
@@ -227,9 +228,24 @@ export default function TaskListTable({
                   </td>
 
                   <td className="py-4 px-4 align-top text-sm text-gray-500 font-medium">
-                    {task.dueDate
-                      ? moment(task.dueDate).format("MMM DD, YYYY")
-                      : "No due date"}
+                    {task.createdAt
+                      ? moment(task.createdAt).format("MMM DD, YYYY")
+                      : "N/A"}
+                  </td>
+
+                  <td className="py-4 px-4 align-top text-sm">
+                    <div className="font-medium text-gray-500">
+                      {task.dueDate
+                        ? moment(task.dueDate).format("MMM DD, YYYY")
+                        : "No due date"}
+                    </div>
+                    {task.dueDate &&
+                      task.status !== "Completed" &&
+                      moment(task.dueDate).isBefore(moment(), "day") && (
+                        <span className="inline-block mt-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-lg text-[11px] font-bold tracking-wide uppercase">
+                          Overdue
+                        </span>
+                      )}
                   </td>
 
                   <td className="py-4 px-4 align-top text-right">
@@ -293,7 +309,7 @@ export default function TaskListTable({
             })
           ) : (
             <tr>
-              <td colSpan="7" className="py-10 text-center text-gray-500">
+              <td colSpan="8" className="py-10 text-center text-gray-500">
                 {emptyMessage}
               </td>
             </tr>

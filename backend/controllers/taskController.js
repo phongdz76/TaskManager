@@ -52,18 +52,24 @@ export const getTasks = async (req, res) => {
   try {
     const { status } = req.query;
     const ignorePinned = req.query.ignorePinned === "true";
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
     const skip = (page - 1) * limit;
     let filter = {};
 
     if (status) {
-      if (!VALID_STATUSES.includes(status)) {
+      if (status === "Overdue") {
+        filter.dueDate = { $ne: null, $lt: startOfToday };
+        filter.status = { $ne: "Completed" };
+      } else if (!VALID_STATUSES.includes(status)) {
         return res.status(400).json({
-          message: `Invalid status filter. Valid options: ${VALID_STATUSES.join(", ")}`,
+          message: `Invalid status filter. Valid options: ${VALID_STATUSES.join(", ")}, Overdue`,
         });
+      } else {
+        filter.status = status;
       }
-      filter.status = status;
     }
 
     const baseUserFilter =
@@ -77,15 +83,15 @@ export const getTasks = async (req, res) => {
     };
 
     const sortCriteria = ignorePinned
-      ? { createdAt: -1 }
-      : { isPinned: -1, createdAt: -1 };
+      ? { createdAt: -1, _id: -1 }
+      : { isPinned: -1, createdAt: -1, _id: -1 };
 
     let tasks = await Task.find(listFilter)
       .sort(sortCriteria)
       .skip(skip)
       .limit(limit)
-      .populate("assignedTo", "username email profileImageUrl")
-      .populate("createdBy", "username email profileImageUrl");
+      .populate("assignedTo", "username email profileImageUrl role")
+      .populate("createdBy", "username email profileImageUrl role");
 
     const totalFilteredTasks = await Task.countDocuments(listFilter);
 
@@ -118,6 +124,12 @@ export const getTasks = async (req, res) => {
       ...baseUserFilter,
     });
 
+    const overdueTasks = await Task.countDocuments({
+      ...baseUserFilter,
+      dueDate: { $ne: null, $lt: startOfToday },
+      status: { $ne: "Completed" },
+    });
+
     res.json({
       tasks,
       statusSummary: {
@@ -125,6 +137,7 @@ export const getTasks = async (req, res) => {
         pending: pendingTasks,
         inProgress: inProgressTasks,
         completed: completedTasks,
+        overdue: overdueTasks,
       },
       pagination: {
         currentPage: page,
@@ -148,8 +161,8 @@ export const getTaskById = async (req, res) => {
     }
 
     const task = await Task.findById(req.params.id)
-      .populate("assignedTo", "username email profileImageUrl")
-      .populate("createdBy", "username email profileImageUrl");
+      .populate("assignedTo", "username email profileImageUrl role")
+      .populate("createdBy", "username email profileImageUrl role");
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
@@ -759,8 +772,8 @@ export const updateTaskChecklist = async (req, res) => {
     }
     await task.save();
     const updatedTask = await Task.findById(req.params.id)
-      .populate("assignedTo", "username email profileImageUrl")
-      .populate("createdBy", "username email profileImageUrl");
+      .populate("assignedTo", "username email profileImageUrl role")
+      .populate("createdBy", "username email profileImageUrl role");
     res.json({
       message: "Task checklist updated successfully",
       task: updatedTask,
@@ -830,7 +843,7 @@ export const getDashboardData = async (req, res) => {
 
     // Fetch paginated recent tasks
     const recentTaskDocs = await Task.find()
-      .sort({ isPinned: -1, createdAt: -1 })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .select(
@@ -948,7 +961,7 @@ export const getUserDashboardData = async (req, res) => {
 
     // Fetch paginated tasks for user
     const recentTaskDocs = await Task.find(userFilter)
-      .sort({ isPinned: -1, createdAt: -1 })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .select(

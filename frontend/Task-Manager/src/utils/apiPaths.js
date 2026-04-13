@@ -17,6 +17,7 @@ export const API_PATHS = {
     GET_ALL_USERS: "/api/users",
     GET_ADMINS: "/api/users/admins",
     GET_ASSIGNABLE_USERS: "/api/users/assignable",
+    TEAM_MEMBERS_SUMMARY: "/api/users/team-members-summary",
     GET_USER_BY_ID: (userId) => `/api/users/${userId}`,
     UPDATE_ROLE: (userId) => `/api/users/${userId}/role`,
     DELETE_USER: (userId) => `/api/users/${userId}`,
@@ -37,6 +38,7 @@ export const API_PATHS = {
 
   REPORTS: {
     EXPORT_MY_TASKS: "/api/reports/export/my-tasks",
+    EXPORT_TEAM_MEMBERS: "/api/reports/export/team-members",
     EXPORT_TASKS: "/api/reports/export/tasks",
     EXPORT_USERS: "/api/reports/export/users",
   },

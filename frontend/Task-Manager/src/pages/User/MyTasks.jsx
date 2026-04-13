@@ -12,6 +12,7 @@ import {
   FaSearch,
   FaSpinner,
   FaTasks,
+  FaExclamationCircle,
 } from "react-icons/fa";
 import Pagination from "../../components/Pagination";
 import ReportDownloadButton from "../../components/ReportDownloadButton";
@@ -19,7 +20,7 @@ import PageContainer from "../../components/common/PageContainer";
 import PageLoader from "../../components/common/PageLoader";
 import TaskListTable from "../../components/tasks/TaskListTable";
 
-const STATUS_FILTERS = ["All", "Pending", "In-Progress", "Completed"];
+const STATUS_FILTERS = ["All", "Pending", "In-Progress", "Completed", "Overdue"];
 
 const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
   <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between">
@@ -48,6 +49,7 @@ export default function MyTasks() {
     pending: 0,
     inProgress: 0,
     completed: 0,
+    overdue: 0,
   });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -125,6 +127,7 @@ export default function MyTasks() {
           pending: 0,
           inProgress: 0,
           completed: 0,
+          overdue: 0,
         },
       );
       setPagination(response?.data?.pagination || null);
@@ -190,7 +193,7 @@ export default function MyTasks() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
           <SummaryCard
             title="Total Tasks"
             value={summary.total}
@@ -218,6 +221,13 @@ export default function MyTasks() {
             icon={<FaCheckCircle size={20} />}
             bgColor="bg-green-50"
             textColor="text-green-600"
+          />
+          <SummaryCard
+            title="Overdue"
+            value={summary.overdue}
+            icon={<FaExclamationCircle size={20} />}
+            bgColor="bg-red-50"
+            textColor="text-red-600"
           />
         </div>
 

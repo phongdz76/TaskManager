@@ -336,17 +336,20 @@ export default function Dashboard() {
                 <table className="w-full min-w-200 text-left">
                   <thead>
                     <tr className="border-b border-gray-100 uppercase text-xs tracking-wider text-gray-500">
-                      <th className="pb-4 px-4 font-semibold w-[36%]">Title</th>
-                      <th className="pb-4 px-4 font-semibold w-[20%]">
+                      <th className="pb-4 px-4 font-semibold w-[30%]">Title</th>
+                      <th className="pb-4 px-4 font-semibold w-[18%]">
                         Created By
                       </th>
-                      <th className="pb-4 px-4 font-semibold w-[14%]">
+                      <th className="pb-4 px-4 font-semibold w-[13%]">
                         Status
                       </th>
-                      <th className="pb-4 px-4 font-semibold w-[14%]">
+                      <th className="pb-4 px-4 font-semibold w-[12%]">
                         Priority
                       </th>
-                      <th className="pb-4 px-4 font-semibold w-[16%]">
+                      <th className="pb-4 px-4 font-semibold w-[13%]">
+                        Created
+                      </th>
+                      <th className="pb-4 px-4 font-semibold w-[14%]">
                         Due Date
                       </th>
                     </tr>
@@ -423,17 +426,34 @@ export default function Dashboard() {
                               {task.priority}
                             </span>
                           </td>
-                          <td className="py-4 px-4 align-top text-gray-500 text-sm font-medium">
-                            {task.dueDate
-                              ? moment(task.dueDate).format("MMM DD, YYYY")
-                              : "No due date"}
+                          <td className="py-4 px-4 align-top text-sm text-gray-500 font-medium">
+                            {task.createdAt
+                              ? moment(task.createdAt).format("MMM DD, YYYY")
+                              : "N/A"}
+                          </td>
+                          <td className="py-4 px-4 align-top text-sm">
+                            <div className="font-medium text-gray-500">
+                              {task.dueDate
+                                ? moment(task.dueDate).format("MMM DD, YYYY")
+                                : "No due date"}
+                            </div>
+                            {task.dueDate &&
+                              task.status !== "Completed" &&
+                              moment(task.dueDate).isBefore(
+                                moment(),
+                                "day",
+                              ) && (
+                                <span className="inline-block mt-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-lg text-[11px] font-bold tracking-wide uppercase">
+                                  Overdue
+                                </span>
+                              )}
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
                         <td
-                          colSpan="5"
+                          colSpan="6"
                           className="py-8 text-center text-gray-500"
                         >
                           No recent tasks found.
