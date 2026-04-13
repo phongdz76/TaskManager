@@ -13,6 +13,7 @@ import {
   FaCalendarAlt,
   FaLink,
 } from "react-icons/fa";
+import { generateGoogleCalendarLink } from "../../utils/calendarUtils";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../context/userContext";
 import moment from "moment";
@@ -52,6 +53,7 @@ export default function CreateTaskPage({
   const [newAttachment, setNewAttachment] = useState("");
   const [userSearch, setUserSearch] = useState("");
   const [assigneePage, setAssigneePage] = useState(1);
+  const [syncToCalendar, setSyncToCalendar] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -245,6 +247,16 @@ export default function CreateTaskPage({
 
       await axiosInstance.post(API_PATHS.TASKS.CREATE, payload);
       toast.success(successMessage);
+
+      if (syncToCalendar) {
+        const guestEmails = getAssignedUsers()
+          .map((u) => u.email)
+          .filter(Boolean);
+        window.open(
+          generateGoogleCalendarLink(formData, guestEmails),
+          "_blank",
+        );
+      }
 
       if (successMode === "reset") {
         setFormData(INITIAL_STATE);
@@ -784,6 +796,22 @@ export default function CreateTaskPage({
                     </span>
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-center gap-3 mb-4 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                <input
+                  type="checkbox"
+                  id="syncCalendar"
+                  checked={syncToCalendar}
+                  onChange={(e) => setSyncToCalendar(e.target.checked)}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer accent-blue-600"
+                />
+                <label
+                  htmlFor="syncCalendar"
+                  className="text-sm font-semibold text-blue-900 cursor-pointer"
+                >
+                  Sync to Google Calendar after creating
+                </label>
               </div>
 
               {/* Submit Button */}
