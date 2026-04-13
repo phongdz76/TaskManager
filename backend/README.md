@@ -15,7 +15,7 @@ REST API server cho ứng dụng quản lý công việc, xây dựng bằng **N
 - [Cấu trúc thư mục](#cấu-trúc-thư-mục)
 - [Mô hình dữ liệu](#mô-hình-dữ-liệu)
 - [API Reference](#api-reference)
-  - [Auth](#auth-apiauthh)
+  - [Auth](#auth-apiauth)
   - [Users](#users-apiusers)
   - [Tasks](#tasks-apitasks)
   - [Reports](#reports-apireports)
@@ -92,9 +92,6 @@ PORT=8000
 
 # Khoá bí mật để ký JWT (đặt chuỗi ngẫu nhiên dài, phức tạp)
 JWT_SECRET=your_super_secret_key
-
-# Token mời để cấp quyền admin khi đăng ký (có thể bỏ trống nếu không dùng)
-ADMIN_INVITE_TOKEN=your_admin_invite_token
 
 # Google OAuth 2.0 (lấy từ Google Cloud Console)
 GOOGLE_CLIENT_ID=your_google_client_id
@@ -196,11 +193,12 @@ backend/
 
 **Lưu ý về auto-sync:**
 
-- `progress` và `status` **luôn được tính tự động** từ `todoChecklist`
+- `progress` và `status` được auto-sync từ `todoChecklist` khi tạo task hoặc cập nhật checklist
 - `progress = 0` → `status = "Pending"`
 - `progress = 1-99` → `status = "In-Progress"`
 - `progress = 100` → `status = "Completed"`
 - Không thể update `progress` hoặc `status` trực tiếp qua `PUT /api/tasks/:id`
+- Đổi trạng thái trực tiếp dùng endpoint `PUT /api/tasks/:id/status` (theo rule checklist)
 
 ---
 
@@ -230,20 +228,18 @@ Tạo tài khoản mới với vai trò `user`.
 }
 ```
 
-> Mật khẩu phải có tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, và ký tự đặc biệt.
+> Mật khẩu phải có tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, chữ số, và ký tự đặc biệt.
 
 **Response `201`:**
 
 ```json
 {
-  "token": "<jwt>",
-  "user": {
-    "_id": "...",
-    "username": "Nguyen Van A",
-    "email": "a@example.com",
-    "role": "user",
-    "profileImageUrl": null
-  }
+  "_id": "...",
+  "name": "Nguyen Van A",
+  "email": "a@example.com",
+  "profileImageUrl": null,
+  "role": "user",
+  "token": "<jwt>"
 }
 ```
 
@@ -264,14 +260,12 @@ Tạo tài khoản mới với vai trò `user`.
 
 ```json
 {
-  "token": "<jwt>",
-  "user": {
-    "_id": "...",
-    "username": "...",
-    "email": "...",
-    "role": "user",
-    "profileImageUrl": null
-  }
+  "_id": "...",
+  "name": "...",
+  "email": "...",
+  "profileImageUrl": null,
+  "role": "user",
+  "token": "<jwt>"
 }
 ```
 
@@ -290,7 +284,15 @@ Gửi email chứa link đặt lại mật khẩu (hết hạn sau 15 phút).
 **Response `200`:**
 
 ```json
-{ "message": "Password reset email sent" }
+{
+  "message": "If that email is registered, a password reset link has been sent"
+}
+```
+
+**Response `404` (email không tồn tại):**
+
+```json
+{ "message": "No account found with this email address" }
 ```
 
 ---
@@ -301,7 +303,7 @@ Gửi email chứa link đặt lại mật khẩu (hết hạn sau 15 phút).
 
 ```json
 {
-  "token": "<reset-token-from-email>",
+  "resetToken": "<reset-token-from-email>",
   "newPassword": "NewPassword@456"
 }
 ```
@@ -324,7 +326,9 @@ Gửi email chứa link đặt lại mật khẩu (hết hạn sau 15 phút).
   "username": "...",
   "email": "...",
   "role": "user",
-  "profileImageUrl": "https://..."
+  "profileImageUrl": "https://...",
+  "googleId": "...",
+  "hasPassword": false
 }
 ```
 
@@ -344,12 +348,23 @@ Gửi email chứa link đặt lại mật khẩu (hết hạn sau 15 phút).
 }
 ```
 
-> Để đổi mật khẩu, bắt buộc phải truyền cả `currentPassword` và `newPassword`.
+> Nếu tài khoản đã có mật khẩu, cần truyền cả `currentPassword` và `newPassword`.
+> Với tài khoản Google-only (chưa có mật khẩu), có thể gửi `newPassword` để tạo mật khẩu lần đầu mà không cần `currentPassword`.
 
 **Response `200`:**
 
 ```json
-{ "user": { ... } }
+{
+  "_id": "...",
+  "name": "...",
+  "username": "...",
+  "email": "...",
+  "profileImageUrl": "https://...",
+  "role": "user",
+  "googleId": "...",
+  "hasPassword": true,
+  "token": "<jwt>"
+}
 ```
 
 ---
@@ -419,13 +434,19 @@ Trả về tất cả tài khoản có `role: "user"`, kèm số task theo trạ
 
 #### `GET /api/users/admins` — Danh sách admin `[Admin]`
 
-Trả về tất cả tài khoản có `role: "admin"`.
+Trả về tất cả tài khoản có `role: "admin"`, kèm số task theo trạng thái.
 
-**Response `200`:** Mảng User object (không có password, không có googleId).
+**Response `200`:** Mảng User object (không có password, không có googleId), có thêm:
+
+- `pendingTasks`
+- `inProgressTasks`
+- `completedTasks`
 
 ---
 
 #### `GET /api/users/:id` — Chi tiết người dùng `[Bảo vệ]`
+
+Endpoint này yêu cầu đăng nhập (`protect`), không giới hạn admin.
 
 **Response `200`:** User object (không có password, không có googleId).
 
@@ -444,7 +465,7 @@ Trả về tất cả tài khoản có `role: "admin"`.
 **Response `200`:**
 
 ```json
-{ "message": "User role updated successfully", "user": { ... } }
+{ "message": "User role updated successfully" }
 ```
 
 ---
@@ -479,13 +500,20 @@ Thống kê tổng quan: số task theo trạng thái, phân bổ theo priority,
     "totalTasks": 20,
     "pendingTasks": 5,
     "inProgressTasks": 8,
-    "completedTasks": 7
+    "completedTasks": 7,
+    "overdueTasks": 2
   },
   "charts": {
-    "taskDistribution": { "Pending": 5, "In-Progress": 8, "Completed": 7 },
-    "tasksByPriority": { "Low": 4, "Medium": 10, "High": 6 }
+    "taskDistribution": { "All": 20, "Pending": 5, "In-Progress": 8, "Completed": 7 },
+    "taskPriorityLevels": { "Low": 4, "Medium": 10, "High": 6 }
   },
-  "recentTasks": [ ... ]
+  "recentTasks": [ ... ],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 2,
+    "totalTasks": 20,
+    "limit": 10
+  }
 }
 ```
 
@@ -509,7 +537,18 @@ Kèm trường `statusSummary` tổng số theo trạng thái và `completedTodo
 ```json
 {
   "tasks": [ ... ],
-  "statusSummary": { "all": 10, "pendingTasks": 3, "inProgressTasks": 4, "completedTasks": 3 }
+  "statusSummary": {
+    "total": 10,
+    "pending": 3,
+    "inProgress": 4,
+    "completed": 3
+  },
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 1,
+    "totalTasks": 10,
+    "limit": 10
+  }
 }
 ```
 
@@ -626,7 +665,7 @@ Kèm trường `statusSummary` tổng số theo trạng thái và `completedTodo
    - **Nếu progress = 100%** → Reject với lỗi `400`:
      ```json
      {
-       "message": "Cannot set status to Pending/In-Progress when all checklist items are completed. Please uncomplete some items first or use PUT /api/tasks/:id/todo endpoint."
+       "message": "Cannot change status when all checklist items are completed. Uncomplete some items first."
      }
      ```
    - **Nếu progress < 100%** → Cho phép, giữ nguyên checklist và recalculate progress
@@ -687,17 +726,16 @@ Server tự động tính `progress` (%) và update `status`:
 
 Tải về file Excel (`.xlsx`) với các cột:
 
-| Cột          | Mô tả                       |
-| ------------ | --------------------------- |
-| Task ID      | MongoDB ObjectId            |
-| Title        | Tiêu đề task                |
-| Description  | Mô tả chi tiết              |
-| Priority     | Low / Medium / High         |
-| Status       | Pending / In-Progress / Completed |
-| Progress     | % hoàn thành (0-100%)       |
-| Assigned To  | Danh sách người được giao   |
-| Created By   | Người tạo task              |
-| Due Date     | Hạn hoàn thành (YYYY-MM-DD) |
+| Cột         | Mô tả                             |
+| ----------- | --------------------------------- |
+| Title       | Tiêu đề task                      |
+| Description | Mô tả chi tiết                    |
+| Priority    | Low / Medium / High               |
+| Status      | Pending / In-Progress / Completed |
+| Progress    | % hoàn thành (0-100%)             |
+| Assigned To | Danh sách người được giao         |
+| Created By  | Người tạo task                    |
+| Due Date    | Hạn hoàn thành (YYYY-MM-DD)       |
 
 **Tên file:** `my_tasks.xlsx`
 
@@ -707,13 +745,13 @@ Tải về file Excel (`.xlsx`) với các cột:
 
 Tải về file Excel (`.xlsx`) chứa **toàn bộ** task trong hệ thống.
 
-**Các cột:** Task ID, Title, Description, Priority, Status, Assigned To, Due Date
+**Các cột:** Title, Description, Priority, Status, Progress, Assigned To, Due Date
 
 ---
 
 #### `GET /api/reports/export/users` — Xuất báo cáo người dùng `[Admin]`
 
-Tải về file Excel (`.xlsx`) chứa thống kê task của từng người dùng.
+Tải về file Excel (`.xlsx`) chứa thống kê task đã được assign cho từng người dùng.
 
 **Các cột:** Username, Email, Total Tasks, Pending, In-Progress, Completed
 
