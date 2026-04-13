@@ -117,7 +117,7 @@ export default function ManagerUser() {
   };
 
   const filteredUsers = useMemo(() => {
-    return users.filter((u) => {
+    const matchedUsers = users.filter((u) => {
       const matchesSearch =
         u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
         u.email.toLowerCase().includes(searchQuery.toLowerCase());
@@ -129,7 +129,18 @@ export default function ManagerUser() {
 
       return matchesSearch && matchesRole;
     });
-  }, [users, searchQuery, roleFilter]);
+
+    // Keep behavior the same, but always show current user first.
+    matchedUsers.sort((a, b) => {
+      const aIsSelf = currentUser?._id === a._id;
+      const bIsSelf = currentUser?._id === b._id;
+
+      if (aIsSelf === bIsSelf) return 0;
+      return aIsSelf ? -1 : 1;
+    });
+
+    return matchedUsers;
+  }, [users, searchQuery, roleFilter, currentUser]);
 
   const totalPages = Math.max(Math.ceil(filteredUsers.length / PAGE_LIMIT), 1);
 
@@ -232,6 +243,9 @@ export default function ManagerUser() {
                     paginatedUsers.map((u) => {
                       const isSelf = currentUser?._id === u._id;
                       const isAdmin = u.role === "admin";
+                      const pendingTasks = u.pendingTasks ?? 0;
+                      const inProgressTasks = u.inProgressTasks ?? 0;
+                      const completedTasks = u.completedTasks ?? 0;
                       // Only users can be modified, admins cannot be modified
                       const canModify = !isAdmin;
 
@@ -283,34 +297,30 @@ export default function ManagerUser() {
                             </span>
                           </td>
 
-                          {/* Tasks count (if any) */}
+                          {/* Tasks count */}
                           <td className="py-4 px-6 text-center text-sm font-medium text-gray-500">
-                            {!isAdmin ? (
-                              <div className="flex justify-center space-x-2">
-                                <span
-                                  className="text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded"
-                                  title="Pending Tasks"
-                                >
-                                  {u.pendingTasks || 0}
-                                </span>
-                                <span>/</span>
-                                <span
-                                  className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded"
-                                  title="In Progress Tasks"
-                                >
-                                  {u.inProgressTasks || 0}
-                                </span>
-                                <span>/</span>
-                                <span
-                                  className="text-green-600 bg-green-50 px-2 py-0.5 rounded"
-                                  title="Completed Tasks"
-                                >
-                                  {u.completedTasks || 0}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400 italic">N/A</span>
-                            )}
+                            <div className="flex justify-center space-x-2">
+                              <span
+                                className="text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded"
+                                title="Pending Tasks"
+                              >
+                                {pendingTasks}
+                              </span>
+                              <span>/</span>
+                              <span
+                                className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded"
+                                title="In Progress Tasks"
+                              >
+                                {inProgressTasks}
+                              </span>
+                              <span>/</span>
+                              <span
+                                className="text-green-600 bg-green-50 px-2 py-0.5 rounded"
+                                title="Completed Tasks"
+                              >
+                                {completedTasks}
+                              </span>
+                            </div>
                           </td>
 
                           {/* Actions */}
