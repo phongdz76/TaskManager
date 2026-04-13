@@ -26,16 +26,20 @@ export const getUsers = async (req, res) => {
     );
     const usersWithTaskCount = await Promise.all(
       users.map(async (user) => {
+        const userTaskFilter = {
+          $or: [{ assignedTo: user._id }, { createdBy: user._id }],
+        };
+
         const pendingTasks = await Task.countDocuments({
-          assignedTo: user._id,
+          ...userTaskFilter,
           status: "Pending",
         });
         const inProgressTasks = await Task.countDocuments({
-          assignedTo: user._id,
-          status: "In Progress",
+          ...userTaskFilter,
+          status: { $in: ["In-Progress", "In Progress"] },
         });
         const completedTasks = await Task.countDocuments({
-          assignedTo: user._id,
+          ...userTaskFilter,
           status: "Completed",
         });
         return {
@@ -60,13 +64,39 @@ export const getAdmins = async (req, res) => {
     const admins = await User.find({ role: "admin" }).select(
       "-password -googleId",
     );
-    res.json(admins);
+    const adminsWithTaskCount = await Promise.all(
+      admins.map(async (admin) => {
+        const adminTaskFilter = {
+          $or: [{ assignedTo: admin._id }, { createdBy: admin._id }],
+        };
+
+        const pendingTasks = await Task.countDocuments({
+          ...adminTaskFilter,
+          status: "Pending",
+        });
+        const inProgressTasks = await Task.countDocuments({
+          ...adminTaskFilter,
+          status: { $in: ["In-Progress", "In Progress"] },
+        });
+        const completedTasks = await Task.countDocuments({
+          ...adminTaskFilter,
+          status: "Completed",
+        });
+        return {
+          ...admin._doc,
+          pendingTasks,
+          inProgressTasks,
+          completedTasks,
+        };
+      }),
+    );
+    res.json(adminsWithTaskCount);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// @desc    Get user by ID (admin or the user themselves)
+// @desc    Get user by ID (any authenticated user)
 // @route   GET /api/users/:id
 // @access  Private
 export const getUserById = async (req, res) => {

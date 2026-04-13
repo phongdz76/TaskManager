@@ -333,7 +333,7 @@ export default function Dashboard() {
                 </button>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[800px] text-left">
+                <table className="w-full min-w-200 text-left">
                   <thead>
                     <tr className="border-b border-gray-100 uppercase text-xs tracking-wider text-gray-500">
                       <th className="pb-4 px-4 font-semibold w-[36%]">Title</th>

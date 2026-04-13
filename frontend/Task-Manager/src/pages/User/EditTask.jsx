@@ -7,9 +7,9 @@ export default function EditTask() {
 
   return (
     <EditTaskPage
-      activeMenu="Manager My Task"
-      backToTasksPath="/admin/tasks"
-      submitRedirectPath="/admin/tasks"
+      activeMenu="My Tasks"
+      backToTasksPath="/user/my-tasks"
+      submitRedirectPath="/user/my-tasks"
     />
   );
 }
