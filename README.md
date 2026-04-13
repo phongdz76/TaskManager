@@ -24,7 +24,7 @@ TaskManager/
     `-- Task-Manager/            # React + Vite client app
 ```
 
-## Quick File Map (File Nam O Dau)
+## Quick File Map
 
 - `backend/server.js`: app bootstrap, CORS, JSON middleware, route mounting
 - `backend/routes/`: route definitions by module (`auth`, `users`, `tasks`, `reports`, `notifications`)
