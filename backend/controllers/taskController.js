@@ -1,17 +1,32 @@
 import Task from "../models/Task.js";
 import User from "../models/User.js";
 import mongoose from "mongoose";
+import { createNotification } from "./notificationController.js";
 
 // --- Validation constants ---
 const VALID_PRIORITIES = ["Low", "Medium", "High"];
 const VALID_STATUSES = ["Pending", "In-Progress", "Completed"];
+const MAX_PAGE_LIMIT = 100;
+const ALLOWED_URL_PROTOCOLS = new Set(["http:", "https:"]);
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 const isValidDate = (d) => !isNaN(Date.parse(d));
 
 const normalizeAssignedTo = (assignedTo) => {
   if (assignedTo === undefined) return undefined;
-  if (Array.isArray(assignedTo)) return assignedTo;
-  return [assignedTo];
+
+  const rawAssignedIds = Array.isArray(assignedTo) ? assignedTo : [assignedTo];
+  const dedupedAssignedIds = [];
+  const seenAssignedIds = new Set();
+
+  for (const assigneeId of rawAssignedIds) {
+    const key = assigneeId?.toString();
+    if (!seenAssignedIds.has(key)) {
+      seenAssignedIds.add(key);
+      dedupedAssignedIds.push(assigneeId);
+    }
+  }
+
+  return dedupedAssignedIds;
 };
 
 const hasPastDate = (value) => {
@@ -22,6 +37,64 @@ const hasPastDate = (value) => {
   today.setHours(0, 0, 0, 0);
 
   return dateOnly < today;
+};
+
+const toDateOnlyTimestamp = (value) => {
+  const date = new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date.getTime();
+};
+
+const isStartDateAfterDueDate = (startDate, dueDate) => {
+  return toDateOnlyTimestamp(startDate) > toDateOnlyTimestamp(dueDate);
+};
+
+const normalizeHttpUrl = (rawValue) => {
+  if (typeof rawValue !== "string") return null;
+
+  const trimmed = rawValue.trim();
+  if (!trimmed || trimmed.length > 500) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    if (!ALLOWED_URL_PROTOCOLS.has(parsed.protocol)) {
+      return null;
+    }
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+};
+
+const validateAndNormalizeAttachments = (attachments) => {
+  if (!Array.isArray(attachments)) {
+    return { error: "Attachments must be an array" };
+  }
+
+  if (attachments.length > 20) {
+    return { error: "Maximum 20 attachments allowed" };
+  }
+
+  const normalized = [];
+  for (const item of attachments) {
+    if (typeof item !== "string" || item.trim().length === 0) {
+      return { error: "Each attachment must be a non-empty string" };
+    }
+
+    const normalizedUrl = normalizeHttpUrl(item);
+    if (!normalizedUrl) {
+      return {
+        error:
+          "Each attachment must be a valid HTTP/HTTPS URL and at most 500 characters",
+      };
+    }
+
+    normalized.push(normalizedUrl);
+  }
+
+  return { normalized };
 };
 
 const isTaskAssignedToUser = (taskAssignedTo, userId) => {
@@ -45,6 +118,49 @@ const validateAssignedUsersExist = async (assignedIds) => {
   return existingUsersCount === uniqueIds.length;
 };
 
+const getUniqueIdStrings = (ids = []) => {
+  return [...new Set(ids.map((id) => id.toString()))];
+};
+
+const validateAndNormalizeTodoChecklist = (todoChecklist) => {
+  if (!Array.isArray(todoChecklist)) {
+    return { error: "todoChecklist must be an array" };
+  }
+
+  if (todoChecklist.length > 50) {
+    return {
+      error: "Maximum 50 checklist items allowed",
+    };
+  }
+
+  const normalized = [];
+  for (const item of todoChecklist) {
+    const text = typeof item?.text === "string" ? item.text.trim() : "";
+    if (!text) {
+      return {
+        error: "Each checklist item must have a non-empty text field",
+      };
+    }
+
+    if (text.length > 500) {
+      return {
+        error: "Checklist item text exceeds 500 characters",
+      };
+    }
+
+    if (item.completed !== undefined && typeof item.completed !== "boolean") {
+      return { error: "completed must be a boolean" };
+    }
+
+    normalized.push({
+      text,
+      completed: item.completed === true,
+    });
+  }
+
+  return { normalized };
+};
+
 // @desc   Get all tasks (Admin: all tasks, User: assigned or created tasks)
 // @route  GET /api/tasks
 // @access Private
@@ -55,7 +171,10 @@ export const getTasks = async (req, res) => {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit, 10) || 10, 1),
+      MAX_PAGE_LIMIT,
+    );
     const skip = (page - 1) * limit;
     let filter = {};
 
@@ -203,6 +322,11 @@ export const createTask = async (req, res) => {
     if (!title || typeof title !== "string" || title.trim().length === 0) {
       return res.status(400).json({ message: "Title is required" });
     }
+    if (title.trim().length < 3) {
+      return res.status(400).json({
+        message: "Title must be at least 3 characters",
+      });
+    }
     if (title.trim().length > 200) {
       return res
         .status(400)
@@ -254,6 +378,16 @@ export const createTask = async (req, res) => {
       });
     }
 
+    // Validate startDate vs dueDate
+    const finalStartDate = startDate ?? new Date();
+    if (dueDate !== undefined && dueDate !== null) {
+      if (isStartDateAfterDueDate(finalStartDate, dueDate)) {
+        return res
+          .status(400)
+          .json({ message: "Start date cannot be after due date" });
+      }
+    }
+
     // Handle assignedTo based on user role
     let normalizedAssignedTo;
     if (assignedTo !== undefined) {
@@ -285,60 +419,40 @@ export const createTask = async (req, res) => {
       normalizedAssignedTo = [req.user._id];
     }
 
+    let normalizedAttachments = attachments;
+    let normalizedTodoChecklist = todoChecklist;
+
     // Validate attachments
     if (attachments !== undefined) {
-      if (!Array.isArray(attachments)) {
-        return res
-          .status(400)
-          .json({ message: "Attachments must be an array" });
+      const attachmentValidation = validateAndNormalizeAttachments(attachments);
+      if (attachmentValidation.error) {
+        return res.status(400).json({ message: attachmentValidation.error });
       }
-      for (const item of attachments) {
-        if (typeof item !== "string" || item.trim().length === 0) {
-          return res
-            .status(400)
-            .json({ message: "Each attachment must be a non-empty string" });
-        }
-      }
+
+      normalizedAttachments = attachmentValidation.normalized;
     }
 
     // Validate todoChecklist
     if (todoChecklist !== undefined) {
-      if (!Array.isArray(todoChecklist)) {
-        return res
-          .status(400)
-          .json({ message: "todoChecklist must be an array" });
+      const checklistValidation =
+        validateAndNormalizeTodoChecklist(todoChecklist);
+      if (checklistValidation.error) {
+        return res.status(400).json({ message: checklistValidation.error });
       }
-      for (const item of todoChecklist) {
-        if (
-          !item.text ||
-          typeof item.text !== "string" ||
-          item.text.trim().length === 0
-        ) {
-          return res.status(400).json({
-            message: "Each checklist item must have a non-empty text field",
-          });
-        }
-        if (
-          item.completed !== undefined &&
-          typeof item.completed !== "boolean"
-        ) {
-          return res
-            .status(400)
-            .json({ message: "completed must be a boolean" });
-        }
-      }
+
+      normalizedTodoChecklist = checklistValidation.normalized;
     }
 
     // Calculate initial progress and status based on todoChecklist
     let initialProgress = 0;
     let initialStatus = "Pending";
 
-    if (todoChecklist && todoChecklist.length > 0) {
-      const completedCount = todoChecklist.filter(
+    if (normalizedTodoChecklist && normalizedTodoChecklist.length > 0) {
+      const completedCount = normalizedTodoChecklist.filter(
         (item) => item.completed,
       ).length;
       initialProgress = Math.round(
-        (completedCount / todoChecklist.length) * 100,
+        (completedCount / normalizedTodoChecklist.length) * 100,
       );
 
       // Set initial status based on progress
@@ -359,11 +473,33 @@ export const createTask = async (req, res) => {
       dueDate,
       assignedTo: normalizedAssignedTo,
       createdBy: req.user._id,
-      todoChecklist,
-      attachments,
+      todoChecklist: normalizedTodoChecklist,
+      attachments: normalizedAttachments,
       progress: initialProgress,
       status: initialStatus,
     });
+
+    // Create notifications for creation
+    await createNotification(
+      req.user._id,
+      `Task "${task.title}" created successfully`,
+      "task_created",
+      task._id,
+    );
+
+    if (task.assignedTo && task.assignedTo.length > 0) {
+      const uniqueAssignedUserIds = getUniqueIdStrings(task.assignedTo);
+      for (const assignedId of uniqueAssignedUserIds) {
+        if (assignedId !== req.user._id.toString()) {
+          await createNotification(
+            assignedId,
+            `You have been assigned to task "${task.title}"`,
+            "task_assigned",
+            task._id,
+          );
+        }
+      }
+    }
 
     res.status(201).json({ message: "Task created successfully", task });
   } catch (error) {
@@ -426,6 +562,11 @@ export const updateTask = async (req, res) => {
           .status(400)
           .json({ message: "Title must be a non-empty string" });
       }
+      if (title.trim().length < 3) {
+        return res.status(400).json({
+          message: "Title must be at least 3 characters",
+        });
+      }
       if (title.trim().length > 200) {
         return res
           .status(400)
@@ -487,6 +628,18 @@ export const updateTask = async (req, res) => {
       }
     }
 
+    const finalStartDate = startDate !== undefined ? startDate : task.startDate;
+    const finalDueDate = dueDate !== undefined ? dueDate : task.dueDate;
+    if (
+      finalStartDate &&
+      finalDueDate &&
+      isStartDateAfterDueDate(finalStartDate, finalDueDate)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Start date cannot be after due date" });
+    }
+
     const normalizedAssignedTo = normalizeAssignedTo(assignedTo);
     if (
       normalizedAssignedTo !== undefined &&
@@ -513,45 +666,23 @@ export const updateTask = async (req, res) => {
         });
       }
     }
+    let normalizedAttachments;
+    let normalizedTodoChecklist;
     if (attachments !== undefined) {
-      if (!Array.isArray(attachments)) {
-        return res
-          .status(400)
-          .json({ message: "Attachments must be an array" });
+      const attachmentValidation = validateAndNormalizeAttachments(attachments);
+      if (attachmentValidation.error) {
+        return res.status(400).json({ message: attachmentValidation.error });
       }
-      for (const item of attachments) {
-        if (typeof item !== "string" || item.trim().length === 0) {
-          return res
-            .status(400)
-            .json({ message: "Each attachment must be a non-empty string" });
-        }
-      }
+      normalizedAttachments = attachmentValidation.normalized;
     }
     if (todoChecklist !== undefined) {
-      if (!Array.isArray(todoChecklist)) {
-        return res
-          .status(400)
-          .json({ message: "todoChecklist must be an array" });
+      const checklistValidation =
+        validateAndNormalizeTodoChecklist(todoChecklist);
+      if (checklistValidation.error) {
+        return res.status(400).json({ message: checklistValidation.error });
       }
-      for (const item of todoChecklist) {
-        if (
-          !item.text ||
-          typeof item.text !== "string" ||
-          item.text.trim().length === 0
-        ) {
-          return res.status(400).json({
-            message: "Each checklist item must have a non-empty text field",
-          });
-        }
-        if (
-          item.completed !== undefined &&
-          typeof item.completed !== "boolean"
-        ) {
-          return res
-            .status(400)
-            .json({ message: "completed must be a boolean" });
-        }
-      }
+
+      normalizedTodoChecklist = checklistValidation.normalized;
     }
 
     if (title !== undefined) task.title = title.trim();
@@ -561,17 +692,17 @@ export const updateTask = async (req, res) => {
     if (dueDate !== undefined) task.dueDate = dueDate;
     if (normalizedAssignedTo !== undefined)
       task.assignedTo = normalizedAssignedTo;
-    if (attachments !== undefined) task.attachments = attachments;
+    if (attachments !== undefined) task.attachments = normalizedAttachments;
     if (todoChecklist !== undefined) {
-      task.todoChecklist = todoChecklist;
+      task.todoChecklist = normalizedTodoChecklist;
 
       // Automatically recalculate progress and status when todoChecklist changes
-      const completedCount = todoChecklist.filter(
+      const completedCount = normalizedTodoChecklist.filter(
         (item) => item.completed,
       ).length;
       task.progress =
-        todoChecklist.length > 0
-          ? Math.round((completedCount / todoChecklist.length) * 100)
+        normalizedTodoChecklist.length > 0
+          ? Math.round((completedCount / normalizedTodoChecklist.length) * 100)
           : 0;
 
       // Automatically update status based on progress
@@ -585,6 +716,28 @@ export const updateTask = async (req, res) => {
     }
 
     const updatedTask = await task.save();
+
+    // Create notifications for update
+    await createNotification(
+      req.user._id,
+      `Task "${task.title}" updated successfully`,
+      "task_updated",
+      task._id,
+    );
+    if (task.assignedTo && task.assignedTo.length > 0) {
+      const uniqueAssignedUserIds = getUniqueIdStrings(task.assignedTo);
+      for (const assignedId of uniqueAssignedUserIds) {
+        if (assignedId !== req.user._id.toString()) {
+          await createNotification(
+            assignedId,
+            `Task "${task.title}" has been updated`,
+            "task_updated",
+            task._id,
+          );
+        }
+      }
+    }
+
     res.json({ message: "Task updated successfully", updatedTask });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -617,6 +770,25 @@ export const deleteTask = async (req, res) => {
     }
 
     await Task.findByIdAndDelete(req.params.id);
+
+    await createNotification(
+      req.user._id,
+      `Task "${task.title}" deleted successfully`,
+      "task_deleted",
+    );
+    if (task.assignedTo && task.assignedTo.length > 0) {
+      const uniqueAssignedUserIds = getUniqueIdStrings(task.assignedTo);
+      for (const assignedId of uniqueAssignedUserIds) {
+        if (assignedId !== req.user._id.toString()) {
+          await createNotification(
+            assignedId,
+            `Task "${task.title}" has been deleted`,
+            "task_deleted",
+          );
+        }
+      }
+    }
+
     res.json({ message: "Task deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -697,6 +869,24 @@ export const updateTaskStatus = async (req, res) => {
     }
 
     await task.save();
+
+    const notifyUsers = [
+      ...new Set([
+        task.createdBy.toString(),
+        ...(task.assignedTo?.map((id) => id.toString()) || []),
+      ]),
+    ];
+    for (const userId of notifyUsers) {
+      if (userId !== req.user._id.toString()) {
+        await createNotification(
+          userId,
+          `Status of task "${task.title}" changed to ${task.status}`,
+          "progress_updated",
+          task._id,
+        );
+      }
+    }
+
     res.json({ message: "Task status updated successfully", task });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -719,20 +909,13 @@ export const updateTaskChecklist = async (req, res) => {
         .status(400)
         .json({ message: "todoChecklist must be an array" });
     }
-    for (const item of todoChecklist) {
-      if (
-        !item.text ||
-        typeof item.text !== "string" ||
-        item.text.trim().length === 0
-      ) {
-        return res.status(400).json({
-          message: "Each checklist item must have a non-empty text field",
-        });
-      }
-      if (item.completed !== undefined && typeof item.completed !== "boolean") {
-        return res.status(400).json({ message: "completed must be a boolean" });
-      }
+
+    const checklistValidation =
+      validateAndNormalizeTodoChecklist(todoChecklist);
+    if (checklistValidation.error) {
+      return res.status(400).json({ message: checklistValidation.error });
     }
+    const normalizedTodoChecklist = checklistValidation.normalized;
 
     const task = await Task.findById(req.params.id);
     if (!task) {
@@ -749,15 +932,15 @@ export const updateTaskChecklist = async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    task.todoChecklist = todoChecklist;
+    task.todoChecklist = normalizedTodoChecklist;
 
     // Automatically calculate progress from checklist
-    const completedCount = todoChecklist.filter(
+    const completedCount = normalizedTodoChecklist.filter(
       (item) => item.completed,
     ).length;
     task.progress =
-      todoChecklist.length > 0
-        ? Math.round((completedCount / todoChecklist.length) * 100)
+      normalizedTodoChecklist.length > 0
+        ? Math.round((completedCount / normalizedTodoChecklist.length) * 100)
         : 0;
 
     // If all checklist items are completed, automatically set task status to Completed
@@ -771,6 +954,31 @@ export const updateTaskChecklist = async (req, res) => {
       task.status = "Pending";
     }
     await task.save();
+
+    const notifyUsers = [
+      ...new Set([
+        task.createdBy.toString(),
+        ...(task.assignedTo?.map((id) => id.toString()) || []),
+      ]),
+    ];
+    for (const userId of notifyUsers) {
+      if (userId !== req.user._id.toString()) {
+        await createNotification(
+          userId,
+          `Checklist in task "${task.title}" was updated`,
+          "checklist_completed",
+          task._id,
+        );
+      } else {
+        await createNotification(
+          req.user._id,
+          `Checklist in task "${task.title}" updated successfully`,
+          "checklist_completed",
+          task._id,
+        );
+      }
+    }
+
     const updatedTask = await Task.findById(req.params.id)
       .populate("assignedTo", "username email profileImageUrl role")
       .populate("createdBy", "username email profileImageUrl role");
@@ -792,7 +1000,10 @@ export const getDashboardData = async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit, 10) || 10, 1),
+      MAX_PAGE_LIMIT,
+    );
     const skip = (page - 1) * limit;
 
     const totalTasks = await Task.countDocuments();
@@ -896,7 +1107,10 @@ export const getUserDashboardData = async (req, res) => {
   try {
     const userId = req.user._id;
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit, 10) || 10, 1),
+      MAX_PAGE_LIMIT,
+    );
     const skip = (page - 1) * limit;
 
     // User sees tasks assigned to them OR tasks they created

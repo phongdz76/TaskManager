@@ -1,7 +1,8 @@
 import Task from "../models/Task.js";
 import User from "../models/User.js";
-import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 import { buildWorkspaceTeamMembersSummary } from "../utils/teamMembersSummary.js";
+import { createNotification } from "./notificationController.js";
 
 // @desc    Get all users for task assignment (any authenticated user)
 // @route   GET /api/users/assignable
@@ -114,6 +115,9 @@ export const getAdmins = async (req, res) => {
 // @access  Private
 export const getUserById = async (req, res) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
     const user = await User.findById(req.params.id).select(
       "-password -googleId",
     );
@@ -136,6 +140,9 @@ export const updateUserRole = async (req, res) => {
     return res.status(400).json({ message: "Invalid role" });
   }
   try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
     const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -151,6 +158,22 @@ export const updateUserRole = async (req, res) => {
 
     user.role = role;
     await user.save();
+
+    if (role === "admin") {
+      await createNotification(
+        user._id,
+        `You have been granted admin privileges`,
+        "admin_granted",
+        user._id,
+      );
+      await createNotification(
+        req.user._id,
+        `Admin privileges granted to user ${user.username}`,
+        "admin_granted",
+        user._id,
+      );
+    }
+
     res.status(200).json({ message: "User role updated successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
@@ -162,6 +185,9 @@ export const updateUserRole = async (req, res) => {
 // @access  Private/Admin
 export const deleteUser = async (req, res) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
     const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -172,9 +198,20 @@ export const deleteUser = async (req, res) => {
       return res.status(403).json({ message: "Cannot delete admin accounts" });
     }
 
-    // Optional: Also delete tasks assigned to this user
-    await Task.deleteMany({ assignedTo: user._id });
+    // Delete tasks created by this user, and unassign them from tasks they were assigned to
+    await Task.deleteMany({ createdBy: user._id });
+    await Task.updateMany(
+      { assignedTo: user._id },
+      { $pull: { assignedTo: user._id } }
+    );
     await User.findByIdAndDelete(req.params.id);
+
+    await createNotification(
+      req.user._id,
+      `User ${user.username} deleted successfully`,
+      "user_deleted",
+    );
+
     res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
