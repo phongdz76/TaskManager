@@ -96,7 +96,7 @@ export const getAdmins = async (req, res) => {
   }
 };
 
-// @desc    Get user by ID (admin or the user themselves)
+// @desc    Get user by ID (any authenticated user)
 // @route   GET /api/users/:id
 // @access  Private
 export const getUserById = async (req, res) => {

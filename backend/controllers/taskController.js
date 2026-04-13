@@ -45,7 +45,7 @@ const validateAssignedUsersExist = async (assignedIds) => {
   return existingUsersCount === uniqueIds.length;
 };
 
-// @desc   Get all tasks (Admin : all tasks, User : assigned tasks)
+// @desc   Get all tasks (Admin: all tasks, User: assigned or created tasks)
 // @route  GET /api/tasks
 // @access Private
 export const getTasks = async (req, res) => {
@@ -138,7 +138,7 @@ export const getTasks = async (req, res) => {
   }
 };
 
-// @desc   Get task by ID (Admin : any task, User : assigned task)
+// @desc   Get task by ID (Admin: any task, User: assigned or created task)
 // @route  GET /api/tasks/:id
 // @access Private
 export const getTaskById = async (req, res) => {
@@ -610,7 +610,7 @@ export const deleteTask = async (req, res) => {
   }
 };
 
-// @desc   Update task status (Admin or assigned user)
+// @desc   Update task status (Admin, assigned user, or task creator)
 // @route  PUT /api/tasks/:id/status
 // @access Private
 export const updateTaskStatus = async (req, res) => {
@@ -690,7 +690,7 @@ export const updateTaskStatus = async (req, res) => {
   }
 };
 
-// @desc   Update task checklist (Admin or assigned user)
+// @desc   Update task checklist (Admin, assigned user, or task creator)
 // @route  PUT /api/tasks/:id/todo
 // @access Private
 export const updateTaskChecklist = async (req, res) => {
