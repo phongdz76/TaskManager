@@ -1054,7 +1054,7 @@ export const getDashboardData = async (req, res) => {
 
     // Fetch paginated recent tasks
     const recentTaskDocs = await Task.find()
-      .sort({ createdAt: -1 })
+      .sort({ isPinned: -1, createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(limit)
       .select(
@@ -1175,7 +1175,7 @@ export const getUserDashboardData = async (req, res) => {
 
     // Fetch paginated tasks for user
     const recentTaskDocs = await Task.find(userFilter)
-      .sort({ createdAt: -1 })
+      .sort({ isPinned: -1, createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(limit)
       .select(
