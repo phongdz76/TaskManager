@@ -28,6 +28,7 @@ import AdminProfile from "./pages/Admin/Profile";
 // User Pages
 import UserDashboard from "./pages/User/UserDashboard";
 import UserCreateTask from "./pages/User/CreateTask";
+import UserEditTask from "./pages/User/EditTask";
 import MyTasks from "./pages/User/MyTasks";
 import ViewTaskDetails from "./pages/User/ViewTaskDetails";
 import UserTeamMembers from "./pages/User/TeamMembers";
@@ -75,7 +76,7 @@ export default function App() {
             <Route element={<PrivateRoute allowedRoles={["user"]} />}>
               <Route path="/user/dashboard" element={<UserDashboard />} />
               <Route path="/user/create-task" element={<UserCreateTask />} />
-              <Route path="/user/tasks/edit/:id" element={<AdminEditTask />} />
+              <Route path="/user/tasks/edit/:id" element={<UserEditTask />} />
               <Route path="/user/my-tasks" element={<MyTasks />} />
               <Route path="/user/team-members" element={<UserTeamMembers />} />
               <Route path="/user/profile" element={<UserProfile />} />
