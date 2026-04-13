@@ -8,7 +8,7 @@ export default function UserTeamMembers() {
   return (
     <TeamMembersView
       activeMenu="Team Members"
-      subtitle="See members that appear in your visible tasks."
+      subtitle="See all workspace members and their overall completion level."
     />
   );
 }

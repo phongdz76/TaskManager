@@ -9,6 +9,7 @@ import {
   FaClock,
   FaSpinner,
   FaCheckCircle,
+  FaExclamationCircle,
   FaSearch,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
@@ -36,7 +37,7 @@ const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
   </div>
 );
 
-const STATUS_FILTERS = ["All", "Pending", "In-Progress", "Completed"];
+const STATUS_FILTERS = ["All", "Pending", "In-Progress", "Completed", "Overdue"];
 
 export default function ManagerAllTasks() {
   useUserAuth();
@@ -225,7 +226,7 @@ export default function ManagerAllTasks() {
         ) : (
           <>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
               <SummaryCard
                 title="Total User Tasks"
                 value={stats.total}
@@ -253,6 +254,13 @@ export default function ManagerAllTasks() {
                 icon={<FaCheckCircle size={24} />}
                 bgColor="bg-green-50"
                 textColor="text-green-600"
+              />
+              <SummaryCard
+                title="Overdue"
+                value={stats.overdue}
+                icon={<FaExclamationCircle size={24} />}
+                bgColor="bg-red-50"
+                textColor="text-red-600"
               />
             </div>
 

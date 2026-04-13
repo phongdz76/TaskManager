@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FaSearch, FaSpinner, FaUser } from "react-icons/fa";
 import DashboardLayout from "../layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
@@ -20,89 +20,24 @@ const StatItem = ({ label, value, valueClass }) => (
 const PAGE_LIMIT = 10;
 
 export default function TeamMembersView({ activeMenu, subtitle }) {
-  const { user } = useUserAuth();
-  const isAdmin = user?.role === "admin";
-  const currentUserId = (user?._id || user?.id || "").toString();
+  useUserAuth();
 
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const buildMembersFromTasks = (tasks) => {
-    const memberMap = new Map();
-
-    const upsertMember = (member, status, seenIds) => {
-      if (!member?._id) return;
-      const id = member._id.toString();
-      if (seenIds.has(id)) return;
-      seenIds.add(id);
-
-      if (!memberMap.has(id)) {
-        memberMap.set(id, {
-          _id: id,
-          username: member.username || "Unknown",
-          email: member.email || "",
-          profileImageUrl: member.profileImageUrl || "",
-          role: member.role || "user",
-          pendingTasks: 0,
-          inProgressTasks: 0,
-          completedTasks: 0,
-          totalTasks: 0,
-        });
-      }
-
-      const current = memberMap.get(id);
-      current.totalTasks += 1;
-
-      if (status === "Pending") current.pendingTasks += 1;
-      else if (status === "In-Progress") current.inProgressTasks += 1;
-      else if (status === "Completed") current.completedTasks += 1;
-    };
-
-    tasks.forEach((task) => {
-      const seenIds = new Set();
-      const assignees = Array.isArray(task?.assignedTo) ? task.assignedTo : [];
-
-      assignees.forEach((assignee) =>
-        upsertMember(assignee, task.status, seenIds),
-      );
-      upsertMember(task?.createdBy, task?.status, seenIds);
-    });
-
-    return Array.from(memberMap.values()).sort((a, b) => {
-      if (b.totalTasks !== a.totalTasks) return b.totalTasks - a.totalTasks;
-      return (a.username || "").localeCompare(b.username || "");
-    });
-  };
-
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     setLoading(true);
     try {
-      const limit = 100;
-      let page = 1;
-      let totalPages = 1;
-      const allTasks = [];
+      const response = await axiosInstance.get(
+        API_PATHS.USERS.TEAM_MEMBERS_SUMMARY,
+      );
+      const teamMembers = Array.isArray(response?.data?.teamMembers)
+        ? response.data.teamMembers
+        : [];
 
-      do {
-        const params = new URLSearchParams();
-        params.set("page", page.toString());
-        params.set("limit", limit.toString());
-
-        const response = await axiosInstance.get(
-          `${API_PATHS.TASKS.GET_ALL_TASKS}?${params.toString()}`,
-        );
-
-        const tasks = Array.isArray(response?.data?.tasks)
-          ? response.data.tasks
-          : [];
-
-        allTasks.push(...tasks);
-        totalPages = response?.data?.pagination?.totalPages || 1;
-        page += 1;
-      } while (page <= totalPages);
-
-      setMembers(buildMembersFromTasks(allTasks));
+      setMembers(teamMembers);
       setCurrentPage(1);
     } catch (error) {
       toast.error(
@@ -111,26 +46,26 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchMembers();
-  }, []);
+  }, [fetchMembers]);
 
   const filteredMembers = useMemo(() => {
-    const visibleMembers = currentUserId
-      ? members.filter((member) => member?._id?.toString() !== currentUserId)
-      : members;
+    const activeMembers = members.filter(
+      (member) => (member?.taskCount || 0) > 0,
+    );
 
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return visibleMembers;
+    if (!query) return activeMembers;
 
-    return visibleMembers.filter((member) => {
+    return activeMembers.filter((member) => {
       const username = (member?.username || "").toLowerCase();
       const email = (member?.email || "").toLowerCase();
       return username.includes(query) || email.includes(query);
     });
-  }, [members, searchQuery, currentUserId]);
+  }, [members, searchQuery]);
 
   const totalPages = Math.max(
     Math.ceil(filteredMembers.length / PAGE_LIMIT),
@@ -163,13 +98,11 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            {isAdmin && (
-              <ReportDownloadButton
-                apiPath={API_PATHS.REPORTS.EXPORT_USERS}
-                fileName="team_members_report.xlsx"
-                buttonText="Export Team Members"
-              />
-            )}
+            <ReportDownloadButton
+              apiPath={API_PATHS.REPORTS.EXPORT_TEAM_MEMBERS}
+              fileName="team_members_report.xlsx"
+              buttonText="Export Team Members"
+            />
             <button
               onClick={fetchMembers}
               disabled={loading}
@@ -239,21 +172,16 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <StatItem
-                      label="Pending"
-                      value={member.pendingTasks || 0}
-                      valueClass="text-violet-600"
-                    />
-                    <StatItem
-                      label="In Progress"
-                      value={member.inProgressTasks || 0}
-                      valueClass="text-cyan-600"
-                    />
-                    <StatItem
-                      label="Completed"
-                      value={member.completedTasks || 0}
+                      label="Task Count"
+                      value={member.taskCount || 0}
                       valueClass="text-indigo-600"
+                    />
+                    <StatItem
+                      label="Completion Level"
+                      value={`${member.completionLevel || 0}%`}
+                      valueClass="text-emerald-600"
                     />
                   </div>
                 </div>
@@ -273,7 +201,7 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
           </>
         ) : (
           <div className="bg-white rounded-xl border border-gray-100 p-10 text-center text-gray-500">
-            No team members found in tasks.
+            No team members found.
           </div>
         )}
       </PageContainer>

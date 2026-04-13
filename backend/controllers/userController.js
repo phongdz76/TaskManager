@@ -1,6 +1,7 @@
 import Task from "../models/Task.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
+import { buildWorkspaceTeamMembersSummary } from "../utils/teamMembersSummary.js";
 
 // @desc    Get all users for task assignment (any authenticated user)
 // @route   GET /api/users/assignable
@@ -13,6 +14,18 @@ export const getAssignableUsers = async (req, res) => {
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// @desc    Get team members task summary (workspace-wide)
+// @route   GET /api/users/team-members-summary
+// @access  Private
+export const getTeamMembersSummary = async (req, res) => {
+  try {
+    const teamMembers = await buildWorkspaceTeamMembersSummary(req.user._id);
+    res.json({ teamMembers });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -173,6 +186,7 @@ export default {
   getUserById,
   getAdmins,
   getAssignableUsers,
+  getTeamMembersSummary,
   updateUserRole,
   deleteUser,
 };

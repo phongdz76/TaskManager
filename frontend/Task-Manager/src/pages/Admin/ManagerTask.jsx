@@ -43,7 +43,7 @@ const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
   </div>
 );
 
-const STATUS_FILTERS = ["All", "Pending", "In-Progress", "Completed"];
+const STATUS_FILTERS = ["All", "Pending", "In-Progress", "Completed", "Overdue"];
 
 export default function ManagerTask() {
   useUserAuth();
