@@ -30,10 +30,10 @@ Backend cung cấp các API để:
 
 - Đăng ký, đăng nhập bằng email/mật khẩu hoặc Google OAuth
 - Đặt lại mật khẩu qua email
-- Quản lý người dùng (admin)
-- Tạo, phân công, và theo dõi công việc (task)
-- Theo dõi tiến độ qua checklist và trạng thái task
-- Xuất báo cáo Excel cho task và người dùng
+- Quản lý người dùng và phân quyền
+- Tạo, phân công, theo dõi tiến độ công việc
+- Cập nhật checklist, trạng thái, ghim task
+- Xuất báo cáo Excel (task, người dùng, task cá nhân, team members)
 
 ---
 
@@ -141,7 +141,7 @@ backend/
 │   └── mailer.js          # Cấu hình Nodemailer + hàm gửi email
 ├── controllers/
 │   ├── authController.js  # Đăng ký, đăng nhập, OAuth, đổi mật khẩu
-│   ├── userController.js  # Quản lý người dùng (CRUD)
+│   ├── userController.js  # Quản lý người dùng
 │   ├── taskController.js  # Quản lý công việc + dashboard
 │   └── reportController.js# Xuất báo cáo Excel
 ├── middlewares/
@@ -150,11 +150,13 @@ backend/
 ├── models/
 │   ├── User.js            # Schema người dùng
 │   └── Task.js            # Schema công việc
-└── routes/
-    ├── authRoutes.js      # /api/auth/*
-    ├── userRoutes.js      # /api/users/*
-    ├── taskRoutes.js      # /api/tasks/*
-    └── reportRoutes.js    # /api/reports/*
+├── routes/
+│   ├── authRoutes.js      # /api/auth/*
+│   ├── userRoutes.js      # /api/users/*
+│   ├── taskRoutes.js      # /api/tasks/*
+│   └── reportRoutes.js    # /api/reports/*
+└── utils/
+    └── teamMembersSummary.js
 ```
 
 ---
@@ -174,37 +176,39 @@ backend/
 | `createdAt`       | Date   | Tự động                                         |
 | `updatedAt`       | Date   | Tự động                                         |
 
+> Trường `hasPassword` xuất hiện trong một số response (`/api/auth/profile`, `/api/auth/profile` update) là trường tính toán, **không** lưu trực tiếp trong schema.
+
 ### Task
 
-| Trường          | Kiểu                  | Mô tả                                                                     |
-| --------------- | --------------------- | ------------------------------------------------------------------------- |
-| `title`         | String                | Tiêu đề công việc, bắt buộc                                               |
-| `description`   | String                | Mô tả chi tiết                                                            |
-| `priority`      | String                | `"Low"` / `"Medium"` / `"High"` (mặc định: `"Medium"`)                    |
-| `status`        | String                | `"Pending"` / `"In-Progress"` / `"Completed"` (tự động sync với progress) |
-| `dueDate`       | Date                  | Hạn hoàn thành                                                            |
-| `assignedTo`    | [ObjectId]            | Danh sách người được giao (ref: User), mặc định assign cho người tạo      |
-| `createdBy`     | ObjectId              | Người tạo task (ref: User)                                                |
-| `attachments`   | [String]              | Danh sách URL file đính kèm                                               |
-| `todoChecklist` | [{ text, completed }] | Danh sách việc cần làm con                                                |
-| `progress`      | Number                | Phần trăm hoàn thành (0–100), **tự động tính** từ checklist (read-only)   |
-| `createdAt`     | Date                  | Tự động                                                                   |
-| `updatedAt`     | Date                  | Tự động                                                                   |
+| Trường          | Kiểu                  | Mô tả                                                            |
+| --------------- | --------------------- | ---------------------------------------------------------------- |
+| `title`         | String                | Tiêu đề công việc, bắt buộc                                      |
+| `description`   | String                | Mô tả chi tiết                                                   |
+| `priority`      | String                | `"Low"` / `"Medium"` / `"High"` (mặc định: `"Medium"`)           |
+| `status`        | String                | `"Pending"` / `"In-Progress"` / `"Completed"`                    |
+| `startDate`     | Date                  | Ngày bắt đầu                                                     |
+| `dueDate`       | Date                  | Hạn hoàn thành                                                   |
+| `assignedTo`    | [ObjectId]            | Danh sách người được giao (ref: User)                            |
+| `createdBy`     | ObjectId              | Người tạo task (ref: User)                                       |
+| `attachments`   | [String]              | Danh sách URL file đính kèm                                      |
+| `todoChecklist` | [{ text, completed }] | Checklist việc cần làm                                           |
+| `progress`      | Number                | Phần trăm hoàn thành (0-100), được đồng bộ theo checklist/status |
+| `isPinned`      | Boolean               | Trạng thái ghim task trên danh sách                              |
+| `createdAt`     | Date                  | Tự động                                                          |
+| `updatedAt`     | Date                  | Tự động                                                          |
 
-**Lưu ý về auto-sync:**
+**Rule đồng bộ status/progress hiện tại:**
 
-- `progress` và `status` được auto-sync từ `todoChecklist` khi tạo task hoặc cập nhật checklist
-- `progress = 0` → `status = "Pending"`
-- `progress = 1-99` → `status = "In-Progress"`
-- `progress = 100` → `status = "Completed"`
-- Không thể update `progress` hoặc `status` trực tiếp qua `PUT /api/tasks/:id`
-- Đổi trạng thái trực tiếp dùng endpoint `PUT /api/tasks/:id/status` (theo rule checklist)
+- Khi cập nhật `todoChecklist`, hệ thống tự tính `progress` và đồng bộ `status`.
+- Với endpoint `PUT /api/tasks/:id/status`:
+  - Nếu task **không có checklist**: cho phép đổi status tự do, progress đặt về `0/50/100` tương ứng.
+  - Nếu task **có checklist**: đặt `Completed` sẽ auto check toàn bộ checklist.
 
 ---
 
 ## API Reference
 
-Tất cả response trả về JSON. Các route được bảo vệ yêu cầu header:
+Tất cả response trả về JSON (trừ endpoint export Excel). Các route bảo vệ yêu cầu header:
 
 ```
 Authorization: Bearer <token>
@@ -224,11 +228,12 @@ Tạo tài khoản mới với vai trò `user`.
 {
   "username": "Nguyen Van A",
   "email": "a@example.com",
-  "password": "Password@123"
+  "password": "Password@123",
+  "profileImageUrl": "https://..."
 }
 ```
 
-> Mật khẩu phải có tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, chữ số, và ký tự đặc biệt.
+> `profileImageUrl` là tùy chọn. Mật khẩu phải có tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, chữ số, ký tự đặc biệt.
 
 **Response `201`:**
 
@@ -261,13 +266,15 @@ Tạo tài khoản mới với vai trò `user`.
 ```json
 {
   "_id": "...",
-  "name": "...",
-  "email": "...",
+  "name": "Nguyen Van A",
+  "email": "a@example.com",
   "profileImageUrl": null,
   "role": "user",
   "token": "<jwt>"
 }
 ```
+
+> Nếu tài khoản là Google-only (không có mật khẩu), API trả `401` với thông báo đăng nhập bằng Google.
 
 ---
 
@@ -316,7 +323,7 @@ Gửi email chứa link đặt lại mật khẩu (hết hạn sau 15 phút).
 
 ---
 
-#### `GET /api/auth/profile` — Xem thông tin cá nhân `[Bảo vệ]`
+#### `GET /api/auth/profile` — Lấy thông tin cá nhân `[Bảo vệ]`
 
 **Response `200`:**
 
@@ -327,8 +334,10 @@ Gửi email chứa link đặt lại mật khẩu (hết hạn sau 15 phút).
   "email": "...",
   "role": "user",
   "profileImageUrl": "https://...",
-  "googleId": "...",
-  "hasPassword": false
+  "googleId": null,
+  "hasPassword": true,
+  "createdAt": "...",
+  "updatedAt": "..."
 }
 ```
 
@@ -348,17 +357,19 @@ Gửi email chứa link đặt lại mật khẩu (hết hạn sau 15 phút).
 }
 ```
 
-> Nếu tài khoản đã có mật khẩu, cần truyền cả `currentPassword` và `newPassword`.
-> Với tài khoản Google-only (chưa có mật khẩu), có thể gửi `newPassword` để tạo mật khẩu lần đầu mà không cần `currentPassword`.
+**Rule đổi mật khẩu:**
+
+- Tài khoản đã có mật khẩu: cần `currentPassword` + `newPassword`.
+- Tài khoản Google-only (`password = null`): có thể set `newPassword` lần đầu, không cần `currentPassword`.
 
 **Response `200`:**
 
 ```json
 {
   "_id": "...",
-  "name": "...",
-  "username": "...",
-  "email": "...",
+  "name": "Tên mới",
+  "username": "Tên mới",
+  "email": "moi@example.com",
   "profileImageUrl": "https://...",
   "role": "user",
   "googleId": "...",
@@ -390,29 +401,29 @@ Gửi email chứa link đặt lại mật khẩu (hết hạn sau 15 phút).
 
 #### `GET /api/auth/google` — Đăng nhập bằng Google
 
-Chuyển hướng trình duyệt đến trang đồng ý của Google OAuth.
+Chuyển hướng trình duyệt đến trang consent của Google OAuth.
 
 ---
 
 #### `GET /api/auth/callback/google` — Google OAuth Callback
 
-Google redirect về đây sau khi người dùng đồng ý. Server tạo/tìm tài khoản rồi redirect về frontend kèm token:
+Google redirect về đây sau khi người dùng đồng ý. Server tạo/tìm user, phát JWT và redirect về frontend:
 
 ```
-<CLIENT_URL>/oauth-callback?token=<jwt>
+<CLIENT_URL>/oauth-callback?token=<jwt>&name=<username>&role=<role>
 ```
 
 ---
 
 ### Users `/api/users`
 
-> Tất cả route trong nhóm này đều yêu cầu xác thực. Các route có nhãn `[Admin]` chỉ admin mới gọi được.
+> Tất cả route nhóm này yêu cầu xác thực. Một số route chỉ dành cho admin.
 
 ---
 
-#### `GET /api/users` — Danh sách người dùng `[Admin]`
+#### `GET /api/users` — Danh sách user thường `[Admin]`
 
-Trả về tất cả tài khoản có `role: "user"`, kèm số task theo trạng thái.
+Trả về user có `role: "user"`, kèm thống kê task theo trạng thái.
 
 **Response `200`:**
 
@@ -423,6 +434,7 @@ Trả về tất cả tài khoản có `role: "user"`, kèm số task theo trạ
     "username": "...",
     "email": "...",
     "profileImageUrl": null,
+    "role": "user",
     "pendingTasks": 2,
     "inProgressTasks": 1,
     "completedTasks": 5
@@ -434,21 +446,62 @@ Trả về tất cả tài khoản có `role: "user"`, kèm số task theo trạ
 
 #### `GET /api/users/admins` — Danh sách admin `[Admin]`
 
-Trả về tất cả tài khoản có `role: "admin"`, kèm số task theo trạng thái.
-
-**Response `200`:** Mảng User object (không có password, không có googleId), có thêm:
-
-- `pendingTasks`
-- `inProgressTasks`
-- `completedTasks`
+Trả về user có `role: "admin"`, kèm thống kê task theo trạng thái.
 
 ---
 
-#### `GET /api/users/:id` — Chi tiết người dùng `[Bảo vệ]`
+#### `GET /api/users/assignable` — Danh sách user có thể assign `[Bảo vệ]`
 
-Endpoint này yêu cầu đăng nhập (`protect`), không giới hạn admin.
+Dành cho mọi user đã đăng nhập.
 
-**Response `200`:** User object (không có password, không có googleId).
+**Response `200`:**
+
+```json
+[
+  {
+    "_id": "...",
+    "username": "...",
+    "email": "...",
+    "profileImageUrl": "...",
+    "role": "user"
+  }
+]
+```
+
+---
+
+#### `GET /api/users/team-members-summary` — Tổng hợp team members `[Bảo vệ]`
+
+Trả về thống kê workspace-wide (không gồm user hiện tại).
+
+**Response `200`:**
+
+```json
+{
+  "teamMembers": [
+    {
+      "_id": "...",
+      "username": "...",
+      "email": "...",
+      "role": "user",
+      "profileImageUrl": "...",
+      "taskCount": 8,
+      "pendingTasks": 2,
+      "inProgressTasks": 3,
+      "completedTasks": 3,
+      "overdueTasks": 1,
+      "totalProgress": 520,
+      "completionLevel": 65
+    }
+  ]
+}
+```
+
+---
+
+#### `GET /api/users/:id` — Chi tiết user `[Bảo vệ]`
+
+Mọi user đăng nhập đều có thể gọi.
 
 ---
 
@@ -461,6 +514,7 @@ Endpoint này yêu cầu đăng nhập (`protect`), không giới hạn admin.
 ```
 
 > Giá trị hợp lệ: `"user"` hoặc `"admin"`.
+> Admin **không thể sửa role của admin khác**.
 
 **Response `200`:**
 
@@ -470,9 +524,10 @@ Endpoint này yêu cầu đăng nhập (`protect`), không giới hạn admin.
 
 ---
 
-#### `DELETE /api/users/:id` — Xoá người dùng `[Admin]`
+#### `DELETE /api/users/:id` — Xoá user `[Admin]`
 
-Xoá người dùng và **toàn bộ task** được giao cho họ.
+- Không cho xoá tài khoản admin.
+- Khi xoá user thường, hệ thống xoá các task có user đó trong `assignedTo`.
 
 **Response `200`:**
 
@@ -484,13 +539,16 @@ Xoá người dùng và **toàn bộ task** được giao cho họ.
 
 ### Tasks `/api/tasks`
 
-> Tất cả route yêu cầu xác thực. Các route nhãn `[Admin]` chỉ admin truy cập được.
+> Tất cả route nhóm task yêu cầu xác thực.
 
 ---
 
-#### `GET /api/tasks/dashboard-data` — Dashboard admin `[Admin]`
+#### `GET /api/tasks/dashboard-data` — Dashboard tổng quan `[Admin]`
 
-Thống kê tổng quan: số task theo trạng thái, phân bổ theo priority, 10 task gần nhất.
+**Query params (tuỳ chọn):**
+
+- `page` (mặc định `1`)
+- `limit` (mặc định `10`)
 
 **Response `200`:**
 
@@ -501,13 +559,31 @@ Thống kê tổng quan: số task theo trạng thái, phân bổ theo priority,
     "pendingTasks": 5,
     "inProgressTasks": 8,
     "completedTasks": 7,
-    "overdueTasks": 2
+    "overdueTasks": 3
   },
   "charts": {
-    "taskDistribution": { "All": 20, "Pending": 5, "In-Progress": 8, "Completed": 7 },
-    "taskPriorityLevels": { "Low": 4, "Medium": 10, "High": 6 }
+    "taskDistribution": {
+      "Pending": 5,
+      "In-Progress": 8,
+      "Completed": 7,
+      "All": 20
+    },
+    "taskPriorityLevels": {
+      "Low": 4,
+      "Medium": 10,
+      "High": 6
+    }
   },
-  "recentTasks": [ ... ],
+  "recentTasks": [
+    {
+      "_id": "...",
+      "title": "...",
+      "status": "In-Progress",
+      "priority": "High",
+      "isPinned": false,
+      "completedTodoCount": 2
+    }
+  ],
   "pagination": {
     "currentPage": 1,
     "totalPages": 2,
@@ -519,34 +595,55 @@ Thống kê tổng quan: số task theo trạng thái, phân bổ theo priority,
 
 ---
 
-#### `GET /api/tasks/user-dashboard-data` — Dashboard người dùng `[Bảo vệ]`
+#### `GET /api/tasks/user-dashboard-data` — Dashboard theo user `[Bảo vệ]`
 
-Giống dashboard admin nhưng chỉ tính các task **được giao cho** hoặc **do người dùng tạo**.
+Thống kê trên tập task user đang đăng nhập được giao hoặc tự tạo.
+
+**Query params:** giống `dashboard-data`.
 
 ---
 
 #### `GET /api/tasks` — Danh sách task `[Bảo vệ]`
 
-- **Admin:** trả về tất cả task, populate `assignedTo` và `createdBy`.
-- **User:** trả về các task được giao cho mình **hoặc** do mình tạo.
+**Quyền truy cập dữ liệu:**
 
-Kèm trường `statusSummary` tổng số theo trạng thái và `completedTodoCount` cho mỗi task.
+- `admin`: thấy tất cả task.
+- `user`: chỉ thấy task được giao hoặc do chính mình tạo.
+
+**Query params (tuỳ chọn):**
+
+- `status`: `Pending` | `In-Progress` | `Completed` | `Overdue`
+- `ignorePinned`: `true`/`false` (mặc định `false`)
+- `page` (mặc định `1`)
+- `limit` (mặc định `10`)
 
 **Response `200`:**
 
 ```json
 {
-  "tasks": [ ... ],
+  "tasks": [
+    {
+      "_id": "...",
+      "title": "...",
+      "status": "Pending",
+      "isPinned": true,
+      "progress": 0,
+      "completedTodoCount": 0,
+      "assignedTo": [{ "_id": "...", "username": "..." }],
+      "createdBy": { "_id": "...", "username": "..." }
+    }
+  ],
   "statusSummary": {
-    "total": 10,
-    "pending": 3,
-    "inProgress": 4,
-    "completed": 3
+    "total": 12,
+    "pending": 4,
+    "inProgress": 5,
+    "completed": 3,
+    "overdue": 2
   },
   "pagination": {
     "currentPage": 1,
-    "totalPages": 1,
-    "totalTasks": 10,
+    "totalPages": 2,
+    "totalTasks": 12,
     "limit": 10
   }
 }
@@ -556,16 +653,15 @@ Kèm trường `statusSummary` tổng số theo trạng thái và `completedTodo
 
 #### `GET /api/tasks/:id` — Chi tiết task `[Bảo vệ]`
 
-- **Admin:** xem tất cả task.
-- **User:** chỉ xem task được giao cho mình hoặc do mình tạo.
+Task được trả về có `assignedTo` và `createdBy` đã populate.
 
-**Response `200`:** Task object đầy đủ với `assignedTo` và `createdBy` được populate.
+**Quyền:** admin, người được assign, hoặc người tạo task.
 
 ---
 
 #### `POST /api/tasks` — Tạo task `[Bảo vệ]`
 
-**Tất cả user** đều có thể tạo task. Task sẽ tự động assign cho người tạo nếu không chỉ định `assignedTo`.
+Tất cả user đã đăng nhập đều có thể tạo task.
 
 **Body:**
 
@@ -574,7 +670,8 @@ Kèm trường `statusSummary` tổng số theo trạng thái và `completedTodo
   "title": "Tên công việc",
   "description": "Mô tả chi tiết",
   "priority": "High",
-  "dueDate": "2026-04-01",
+  "startDate": "2026-04-20",
+  "dueDate": "2026-04-30",
   "assignedTo": ["<userId1>", "<userId2>"],
   "attachments": ["https://..."],
   "todoChecklist": [
@@ -584,57 +681,51 @@ Kèm trường `statusSummary` tổng số theo trạng thái và `completedTodo
 }
 ```
 
-| Trường          | Bắt buộc | Ghi chú                                      |
-| --------------- | -------- | -------------------------------------------- |
-| `title`         | Có       | Tối đa 200 ký tự                             |
-| `description`   | Không    | Tối đa 2000 ký tự                            |
-| `priority`      | Không    | `Low` / `Medium` / `High`                    |
-| `dueDate`       | Không    | ISO date string, không được trong quá khứ    |
-| `assignedTo`    | Không    | Mảng User ID (mặc định: người tạo)           |
-| `attachments`   | Không    | Mảng URL                                     |
-| `todoChecklist` | Không    | Mảng `{ text: string, completed?: boolean }` |
+**Rule chính:**
 
-**Tính năng tự động:**
+- `title` bắt buộc, tối đa 200 ký tự.
+- `description` tối đa 2000 ký tự.
+- `priority`: `Low`/`Medium`/`High`.
+- `startDate`, `dueDate` không được ở quá khứ khi tạo mới.
+- Nếu không truyền `assignedTo`, mặc định assign cho người tạo.
+- Nếu có `todoChecklist`, server tự tính `progress` và `status` ban đầu.
 
-- Nếu `todoChecklist` có items đã `completed = true`, hệ thống sẽ tự tính `progress` và `status` phù hợp ngay khi tạo.
-- Ví dụ: 1/2 items completed → `progress = 50`, `status = "In-Progress"`.
-
-**Response `201`:** Task object vừa tạo với `progress` và `status` đã được tính.
-
----
-
-#### `PUT /api/tasks/:id` — Cập nhật task `[Admin hoặc Creator]`
-
-**Admin** hoặc **người tạo task** có thể cập nhật.
-
-**Body:** Tương tự `POST /api/tasks`, tất cả trường đều tùy chọn.
-
-**⚠️ Lưu ý quan trọng:**
-
-- **KHÔNG THỂ** update trường `status` qua endpoint này.
-- Sử dụng `PUT /api/tasks/:id/status` để thay đổi status, hoặc update `todoChecklist` để auto-sync status.
-- Nếu gửi field `status`, server sẽ trả về lỗi `400`.
-
-**Ví dụ update todoChecklist:**
+**Response `201`:**
 
 ```json
 {
-  "todoChecklist": [
-    { "text": "Bước 1", "completed": true },
-    { "text": "Bước 2", "completed": false }
-  ]
+  "message": "Task created successfully",
+  "task": { "_id": "...", "title": "...", "status": "Pending" }
 }
 ```
 
-→ Hệ thống tự động tính `progress = 50` và set `status = "In-Progress"`.
+---
 
-**Response `200`:** Task object sau khi cập nhật với `progress` và `status` đã auto-sync.
+#### `PUT /api/tasks/:id` — Cập nhật task `[Bảo vệ]`
+
+**Quyền:** admin hoặc người tạo task.
+
+**Body:** tương tự `POST /api/tasks`, mọi trường đều tùy chọn.
+
+**Lưu ý:**
+
+- Không cho cập nhật `status` trực tiếp ở endpoint này.
+- Nếu cập nhật `todoChecklist`, server tự sync `progress` + `status`.
+
+**Response `200`:**
+
+```json
+{
+  "message": "Task updated successfully",
+  "updatedTask": { "_id": "...", "title": "..." }
+}
+```
 
 ---
 
-#### `DELETE /api/tasks/:id` — Xoá task `[Admin hoặc Creator]`
+#### `DELETE /api/tasks/:id` — Xoá task `[Bảo vệ]`
 
-**Admin** hoặc **người tạo task** có thể xoá.
+**Quyền:** admin hoặc người tạo task.
 
 **Response `200`:**
 
@@ -646,37 +737,35 @@ Kèm trường `statusSummary` tổng số theo trạng thái và `completedTodo
 
 #### `PUT /api/tasks/:id/status` — Cập nhật trạng thái `[Bảo vệ]`
 
-**Admin**, **người được giao**, hoặc **người tạo task** có thể cập nhật.
+**Quyền:** admin, người được assign, hoặc người tạo task.
 
 **Body:**
 
 ```json
-{ "status": "Completed" }
+{ "status": "In-Progress" }
 ```
 
-**Logic tự động:**
+**Rule xử lý:**
 
-1. **Khi set `status = "Completed"`:**
-   - Tất cả items trong `todoChecklist` → `completed = true`
-   - `progress = 100`
+- Task không có checklist: status đổi tự do, progress set theo status (`0/50/100`).
+- Task có checklist:
+  - Đổi sang `Completed` -> auto tick toàn bộ checklist.
+  - Nếu checklist đã 100% completed, không cho đổi về trạng thái khác cho tới khi bỏ tick một số item.
 
-2. **Khi set `status = "Pending"` hoặc `"In-Progress"`:**
-   - Hệ thống kiểm tra progress hiện tại
-   - **Nếu progress = 100%** → Reject với lỗi `400`:
-     ```json
-     {
-       "message": "Cannot change status when all checklist items are completed. Uncomplete some items first."
-     }
-     ```
-   - **Nếu progress < 100%** → Cho phép, giữ nguyên checklist và recalculate progress
+**Response `200`:**
 
-**Response `200`:** Task object sau khi cập nhật.
+```json
+{
+  "message": "Task status updated successfully",
+  "task": { "_id": "...", "status": "In-Progress", "progress": 50 }
+}
+```
 
 ---
 
 #### `PUT /api/tasks/:id/todo` — Cập nhật checklist `[Bảo vệ]`
 
-**Admin**, **người được giao**, hoặc **người tạo task** có thể cập nhật.
+**Quyền:** admin, người được assign, hoặc người tạo task.
 
 **Body:**
 
@@ -689,98 +778,89 @@ Kèm trường `statusSummary` tổng số theo trạng thái và `completedTodo
 }
 ```
 
-**Logic tự động:**
+Server tự tính `progress` và `status` theo checklist.
 
-Server tự động tính `progress` (%) và update `status`:
-
-| Progress | Status          |
-| -------- | --------------- |
-| 0%       | `"Pending"`     |
-| 1–99%    | `"In-Progress"` |
-| 100%     | `"Completed"`   |
-
-**Ví dụ:**
+**Response `200`:**
 
 ```json
-// Input: 2/3 items completed
-{ "todoChecklist": [...] }
-
-// Auto-calculated:
-// progress: 67
-// status: "In-Progress"
+{
+  "message": "Task checklist updated successfully",
+  "task": { "_id": "...", "status": "In-Progress", "progress": 50 }
+}
 ```
 
-**Response `200`:** Task object sau khi cập nhật (với `assignedTo` và `createdBy` được populate).
+---
+
+#### `PATCH /api/tasks/:id/pin` — Ghim/Bỏ ghim task `[Bảo vệ]`
+
+**Quyền:** admin, người được assign, hoặc người tạo task.
+
+**Response `200`:**
+
+```json
+{ "message": "Task pin status updated", "isPinned": true }
+```
 
 ---
 
 ### Reports `/api/reports`
 
-> Các route có nhãn `[Admin]` chỉ admin truy cập được.
+> Các endpoint nhóm này trả file Excel (`.xlsx`) thay vì JSON.
 
 ---
 
-#### `GET /api/reports/export/my-tasks` — Xuất báo cáo task cá nhân `[Bảo vệ]`
+#### `GET /api/reports/export/my-tasks` — Xuất task của tôi `[Bảo vệ]`
 
-**User** có thể xuất file Excel chứa tất cả task **được giao cho** hoặc **do họ tạo**.
+Mọi user đăng nhập đều dùng được.
 
-Tải về file Excel (`.xlsx`) với các cột:
-
-| Cột         | Mô tả                             |
-| ----------- | --------------------------------- |
-| Title       | Tiêu đề task                      |
-| Description | Mô tả chi tiết                    |
-| Priority    | Low / Medium / High               |
-| Status      | Pending / In-Progress / Completed |
-| Progress    | % hoàn thành (0-100%)             |
-| Assigned To | Danh sách người được giao         |
-| Created By  | Người tạo task                    |
-| Due Date    | Hạn hoàn thành (YYYY-MM-DD)       |
-
-**Tên file:** `my_tasks.xlsx`
+- Nguồn dữ liệu: task được giao cho tôi hoặc do tôi tạo.
+- File xuất: `my_tasks.xlsx`.
 
 ---
 
-#### `GET /api/reports/export/tasks` — Xuất báo cáo toàn bộ task `[Admin]`
+#### `GET /api/reports/export/team-members` — Xuất thống kê thành viên `[Bảo vệ]`
 
-Tải về file Excel (`.xlsx`) chứa **toàn bộ** task trong hệ thống.
+Mọi user đăng nhập đều dùng được.
 
-**Các cột:** Title, Description, Priority, Status, Progress, Assigned To, Due Date
+- Dữ liệu team members theo workspace-wide.
+- File xuất: `team_members_report.xlsx`.
 
 ---
 
-#### `GET /api/reports/export/users` — Xuất báo cáo người dùng `[Admin]`
+#### `GET /api/reports/export/tasks` — Xuất toàn bộ task `[Admin]`
 
-Tải về file Excel (`.xlsx`) chứa thống kê task đã được assign cho từng người dùng.
+- Chỉ admin.
+- File xuất: `tasks_report.xlsx`.
 
-**Các cột:** Username, Email, Total Tasks, Pending, In-Progress, Completed
+---
+
+#### `GET /api/reports/export/users` — Xuất thống kê user `[Admin]`
+
+- Chỉ admin.
+- File xuất: `users_report.xlsx`.
 
 ---
 
 ## Phân quyền
 
-| Hành động                           |             User              | Admin |
-| ----------------------------------- | :---------------------------: | :---: |
-| Đăng ký / Đăng nhập                 |               ✓               |   ✓   |
-| Xem / sửa thông tin cá nhân         |               ✓               |   ✓   |
-| Upload ảnh đại diện                 |               ✓               |   ✓   |
-| **Tạo task**                        |               ✓               |   ✓   |
-| Xem task được giao hoặc do mình tạo |               ✓               |   ✓   |
-| **Sửa / xoá task của mình**         |      ✓ (nếu là creator)       |   ✓   |
-| Cập nhật trạng thái / checklist     | ✓ (nếu assigned hoặc creator) |   ✓   |
-| **Xuất Excel task của mình**        |               ✓               |   ✓   |
-| Xem tất cả task                     |               ✗               |   ✓   |
-| Sửa / xoá task của người khác       |               ✗               |   ✓   |
-| Quản lý người dùng                  |               ✗               |   ✓   |
-| Xem dashboard đầy đủ                |   ✗ (chỉ xem task của mình)   |   ✓   |
-| Xuất Excel toàn bộ task/users       |               ✗               |   ✓   |
-
-**Lưu ý:**
-
-- **User** giờ có thể tạo task và tự động được assign vào task đó.
-- **Creator** (người tạo task) có full quyền update/delete task của mình, giống như admin.
-- **Assigned user** chỉ có quyền update status và checklist, không sửa/xoá được task.
-- **User** có thể xuất báo cáo Excel cho task của riêng mình (assigned hoặc created).
+| Hành động                                | User | Admin |
+| ---------------------------------------- | :--: | :---: |
+| Đăng ký / Đăng nhập / Google OAuth       |  ✓   |   ✓   |
+| Xem / sửa thông tin cá nhân              |  ✓   |   ✓   |
+| Upload ảnh đại diện                      |  ✓   |   ✓   |
+| Xem danh sách assignable users           |  ✓   |   ✓   |
+| Xem team members summary                 |  ✓   |   ✓   |
+| Xem task được giao hoặc do mình tạo      |  ✓   |   ✓   |
+| Tạo task                                 |  ✓   |   ✓   |
+| Sửa / xoá task do mình tạo               |  ✓   |   ✓   |
+| Cập nhật status/checklist task liên quan |  ✓   |   ✓   |
+| Ghim / bỏ ghim task liên quan            |  ✓   |   ✓   |
+| Xem tất cả user/admin                    |  ✗   |   ✓   |
+| Cập nhật role user                       |  ✗   |   ✓   |
+| Xoá user thường                          |  ✗   |   ✓   |
+| Dashboard tổng quan hệ thống             |  ✗   |   ✓   |
+| Export `my-tasks`, `team-members`        |  ✓   |   ✓   |
+| Export `tasks`, `users`                  |  ✗   |   ✓   |
 
 ---
 
@@ -789,8 +869,8 @@ Tải về file Excel (`.xlsx`) chứa thống kê task đã được assign cho
 ### JWT
 
 - Token có hiệu lực **7 ngày**, ký bằng `JWT_SECRET`.
-- Gửi qua header: `Authorization: Bearer <token>`
-- Middleware `protect` xác thực token và gắn `req.user` vào request.
+- Gửi qua header: `Authorization: Bearer <token>`.
+- Middleware `protect` xác thực token và nạp `req.user`.
 - Middleware `adminOnly` kiểm tra `req.user.role === "admin"`.
 
 ### Google OAuth
@@ -805,9 +885,11 @@ Client                          Server                        Google
   |                               |<--- user approves ----------|
   |                               |--- exchange code for token --|
   |<-- redirect to CLIENT_URL    <|                              |
-  |    ?token=<jwt>               |                              |
+  |    ?token=<jwt>&name=...      |                              |
 ```
 
 ### Đặt lại mật khẩu
 
-Token reset được ký bằng `JWT_SECRET + currentPasswordHash`, hết hạn sau **15 phút**. Token tự vô hiệu hoá ngay khi mật khẩu được thay đổi, ngăn sử dụng lại link cũ.
+- Token reset được ký bằng `JWT_SECRET + currentPasswordHash`.
+- Thời hạn token: **15 phút**.
+- Khi người dùng đổi mật khẩu thành công, các reset token cũ tự vô hiệu.
