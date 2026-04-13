@@ -34,6 +34,13 @@ const INITIAL_STATE = {
 };
 
 const ASSIGNEE_PAGE_LIMIT = 10;
+const MIN_TITLE_LENGTH = 3;
+const MAX_TITLE_LENGTH = 200;
+const MAX_DESCRIPTION_LENGTH = 2000;
+const MAX_ATTACHMENTS = 20;
+const MAX_ATTACHMENT_URL_LENGTH = 500;
+const MAX_TODO_ITEMS = 50;
+const MAX_TODO_TEXT_LENGTH = 500;
 
 export default function EditTaskPage({
   activeMenu,
@@ -188,6 +195,7 @@ export default function EditTaskPage({
   const normalizeAttachmentUrl = (value) => {
     const trimmedValue = value.trim();
     if (!trimmedValue) return null;
+    if (trimmedValue.length > MAX_ATTACHMENT_URL_LENGTH) return null;
 
     const candidate = /^https?:\/\//i.test(trimmedValue)
       ? trimmedValue
@@ -196,13 +204,20 @@ export default function EditTaskPage({
     try {
       const parsedUrl = new URL(candidate);
       if (!["http:", "https:"].includes(parsedUrl.protocol)) return null;
-      return parsedUrl.toString();
+      const normalizedUrl = parsedUrl.toString();
+      if (normalizedUrl.length > MAX_ATTACHMENT_URL_LENGTH) return null;
+      return normalizedUrl;
     } catch {
       return null;
     }
   };
 
   const handleAddAttachment = () => {
+    if (formData.attachments.length >= MAX_ATTACHMENTS) {
+      toast.error(`You can add up to ${MAX_ATTACHMENTS} attachments`);
+      return;
+    }
+
     const normalizedAttachment = normalizeAttachmentUrl(newAttachment);
 
     if (!normalizedAttachment) {
@@ -232,12 +247,26 @@ export default function EditTaskPage({
   };
 
   const handleAddTodo = () => {
-    if (!newTodo.trim()) return;
+    const trimmedTodo = newTodo.trim();
+    if (!trimmedTodo) return;
+
+    if (formData.todoChecklist.length >= MAX_TODO_ITEMS) {
+      toast.error(`You can add up to ${MAX_TODO_ITEMS} checklist items`);
+      return;
+    }
+
+    if (trimmedTodo.length > MAX_TODO_TEXT_LENGTH) {
+      toast.error(
+        `Checklist item must be at most ${MAX_TODO_TEXT_LENGTH} characters`,
+      );
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       todoChecklist: [
         ...prev.todoChecklist,
-        { text: newTodo.trim(), completed: false },
+        { text: trimmedTodo, completed: false },
       ],
     }));
     setNewTodo("");
@@ -252,24 +281,96 @@ export default function EditTaskPage({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title.trim()) {
+
+    const trimmedTitle = formData.title.trim();
+    if (!trimmedTitle) {
       toast.error("Title is required");
       return;
     }
 
+    if (trimmedTitle.length < MIN_TITLE_LENGTH) {
+      toast.error(`Title must be at least ${MIN_TITLE_LENGTH} characters`);
+      return;
+    }
+
+    if (trimmedTitle.length > MAX_TITLE_LENGTH) {
+      toast.error(`Title must be at most ${MAX_TITLE_LENGTH} characters`);
+      return;
+    }
+
+    const trimmedDescription = formData.description.trim();
+    if (trimmedDescription.length > MAX_DESCRIPTION_LENGTH) {
+      toast.error(
+        `Description must be at most ${MAX_DESCRIPTION_LENGTH} characters`,
+      );
+      return;
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+
     if (formData.startDate && formData.startDate !== originalStartDate) {
-      const today = new Date().toISOString().split("T")[0];
       if (formData.startDate < today) {
         toast.error("Start date cannot be changed to a past date");
         return;
       }
     }
 
+    const effectiveStartDate = formData.startDate || today;
+    if (formData.dueDate && formData.dueDate < effectiveStartDate) {
+      toast.error("Due date cannot be earlier than start date");
+      return;
+    }
+
+    if (formData.attachments.length > MAX_ATTACHMENTS) {
+      toast.error(`You can add up to ${MAX_ATTACHMENTS} attachments`);
+      return;
+    }
+
+    const normalizedAttachments = [];
+    for (const attachment of formData.attachments) {
+      const normalizedAttachment = normalizeAttachmentUrl(attachment);
+      if (!normalizedAttachment) {
+        toast.error(
+          "Each attachment must be a valid HTTP/HTTPS URL and within length limit",
+        );
+        return;
+      }
+      normalizedAttachments.push(normalizedAttachment);
+    }
+
+    if (formData.todoChecklist.length > MAX_TODO_ITEMS) {
+      toast.error(`You can add up to ${MAX_TODO_ITEMS} checklist items`);
+      return;
+    }
+
+    const normalizedTodoChecklist = [];
+    for (const todo of formData.todoChecklist) {
+      const text = typeof todo?.text === "string" ? todo.text.trim() : "";
+      if (!text) {
+        toast.error("Checklist items cannot be empty");
+        return;
+      }
+
+      if (text.length > MAX_TODO_TEXT_LENGTH) {
+        toast.error(
+          `Checklist item must be at most ${MAX_TODO_TEXT_LENGTH} characters`,
+        );
+        return;
+      }
+
+      normalizedTodoChecklist.push({
+        text,
+        completed: todo.completed === true,
+      });
+    }
+
+    const uniqueAssignedTo = [...new Set(formData.assignedTo)];
+
     setIsSubmitting(true);
     try {
       const payload = {
-        title: formData.title.trim(),
-        description: formData.description.trim() || undefined,
+        title: trimmedTitle,
+        description: trimmedDescription || undefined,
         priority: formData.priority,
         startDate: formData.startDate
           ? new Date(formData.startDate).toISOString()
@@ -277,12 +378,11 @@ export default function EditTaskPage({
         dueDate: formData.dueDate
           ? new Date(formData.dueDate).toISOString()
           : undefined,
-        assignedTo:
-          formData.assignedTo.length > 0 ? formData.assignedTo : undefined,
-        attachments: formData.attachments,
+        assignedTo: uniqueAssignedTo.length > 0 ? uniqueAssignedTo : undefined,
+        attachments: normalizedAttachments,
         todoChecklist:
-          formData.todoChecklist.length > 0
-            ? formData.todoChecklist
+          normalizedTodoChecklist.length > 0
+            ? normalizedTodoChecklist
             : undefined,
       };
 
@@ -309,6 +409,16 @@ export default function EditTaskPage({
   };
 
   const todayFormatted = moment().format("dddd, MMMM Do YYYY");
+  const browserToday = new Date().toISOString().split("T")[0];
+  const startDateMin =
+    originalStartDate && originalStartDate < browserToday
+      ? originalStartDate
+      : browserToday;
+  const dueDateBaseMin = formData.startDate || browserToday;
+  const dueDateMin =
+    formData.dueDate && formData.dueDate < dueDateBaseMin
+      ? formData.dueDate
+      : dueDateBaseMin;
 
   return (
     <DashboardLayout activeMenu={resolvedActiveMenu}>
@@ -345,7 +455,6 @@ export default function EditTaskPage({
         ) : (
           <form
             onSubmit={handleSubmit}
-            noValidate
             className="grid grid-cols-1 lg:grid-cols-3 gap-6"
           >
             <div className="lg:col-span-2 space-y-6">
@@ -366,6 +475,7 @@ export default function EditTaskPage({
                       value={formData.title}
                       onChange={handleChange}
                       placeholder="E.g., Redesign the landing page"
+                      minLength={MIN_TITLE_LENGTH}
                       maxLength={200}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition bg-gray-50/50 focus:bg-white"
                       required
@@ -404,6 +514,7 @@ export default function EditTaskPage({
                         type="text"
                         value={newAttachment}
                         onChange={(e) => setNewAttachment(e.target.value)}
+                        maxLength={MAX_ATTACHMENT_URL_LENGTH}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
@@ -592,6 +703,7 @@ export default function EditTaskPage({
                     type="text"
                     value={newTodo}
                     onChange={(e) => setNewTodo(e.target.value)}
+                    maxLength={MAX_TODO_TEXT_LENGTH}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -705,7 +817,7 @@ export default function EditTaskPage({
                       type="date"
                       name="startDate"
                       value={formData.startDate}
-                      min={new Date().toISOString().split("T")[0]}
+                      min={startDateMin}
                       onChange={handleChange}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none text-gray-700 text-sm"
                     />
@@ -723,6 +835,7 @@ export default function EditTaskPage({
                       type="date"
                       name="dueDate"
                       value={formData.dueDate}
+                      min={dueDateMin}
                       onChange={handleChange}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none text-gray-700 text-sm"
                     />

@@ -15,12 +15,12 @@ import upload from "../middlewares/uploadMiddleware.js";
 const router = express.Router();
 
 // Auth Routes
-router.post("/register", registerUser);
-router.post("/login", loginUser);
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password", resetPassword);
-router.get("/profile", protect, getUserProfile);
-router.put("/profile", protect, updateUserProfile);
+router.post("/register", registerUser); // Registration route (open to all)
+router.post("/login", loginUser); // Login route (open to all)
+router.post("/forgot-password", forgotPassword); // Forgot password route (open to all)
+router.post("/reset-password", resetPassword); // Reset password route (open to all, but requires token)
+router.get("/profile", protect, getUserProfile); // Get user profile route (requires authentication)
+router.put("/profile", protect, updateUserProfile); // Update user profile route (requires authentication)
 
 router.post(
   "/upload-image",
@@ -43,10 +43,10 @@ router.post(
       res.status(500).json({ message: "Server error", error: error.message });
     }
   },
-);
+); // Route to upload profile image (requires authentication)
 
 // Google OAuth Routes
-router.get("/google", googleLogin);
-router.get("/callback/google", googleCallback);
+router.get("/google", googleLogin); // Route to initiate Google OAuth login
+router.get("/callback/google", googleCallback); // Route to handle Google OAuth callback
 
 export default router;

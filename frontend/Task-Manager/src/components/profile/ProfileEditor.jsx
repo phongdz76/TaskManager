@@ -5,7 +5,7 @@ import Input from "../Inputs/Input";
 import { UserContext } from "../../context/userContext";
 import { API_PATHS } from "../../utils/apiPaths";
 import axiosInstance from "../../utils/axiosInstance";
-import uploadImage from "../../utils/uploadImage";
+import uploadImage, { validateImageFile } from "../../utils/uploadImage";
 import PageLoader from "../common/PageLoader";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -121,6 +121,14 @@ export default function ProfileEditor() {
     const selectedFile = e.target.files?.[0];
 
     if (!selectedFile) return;
+
+    try {
+      validateImageFile(selectedFile);
+    } catch (error) {
+      toast.error(error.message || "Selected image is not valid");
+      e.target.value = "";
+      return;
+    }
 
     setUploadingImage(true);
 
@@ -257,7 +265,7 @@ export default function ProfileEditor() {
             {uploadingImage ? "Uploading image..." : "Change avatar"}
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/jpg,image/png"
               className="hidden"
               onChange={handleImageChange}
               disabled={uploadingImage || saving}

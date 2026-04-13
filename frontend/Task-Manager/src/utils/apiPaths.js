@@ -43,6 +43,14 @@ export const API_PATHS = {
     EXPORT_USERS: "/api/reports/export/users",
   },
 
+  NOTIFICATIONS: {
+    GET_ALL: "/api/notifications",
+    MARK_ALL_AS_READ: "/api/notifications/read-all",
+    CLEAR_ALL: "/api/notifications/clear-all",
+    MARK_AS_READ: (notificationId) =>
+      `/api/notifications/${notificationId}/read`,
+  },
+
   IMAGES: {
     UPLOAD_IMAGE: "/api/auth/upload-image",
   },

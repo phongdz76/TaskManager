@@ -12,6 +12,9 @@ import { API_PATHS } from "../../utils/apiPaths";
 const PASSWORD_HELPER_TEXT =
   "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
 
+const PASSWORD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+
 export default function ResetPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchParams] = useSearchParams();
@@ -39,7 +42,7 @@ export default function ResetPassword() {
 
     if (!formData.password) {
       newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
+    } else if (!PASSWORD_REGEX.test(formData.password)) {
       newErrors.password =
         "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character";
     }
