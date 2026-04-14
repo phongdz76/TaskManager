@@ -22,12 +22,47 @@ export const isTaskOverdue = (task) => {
 };
 
 export const buildWorkspaceTeamMembersSummary = async (currentUserId) => {
-  const [users, tasks] = await Promise.all([
-    User.find({ _id: { $ne: currentUserId } })
-      .select("_id username email role profileImageUrl")
-      .lean(),
-    Task.find().select("assignedTo createdBy status progress dueDate").lean(),
-  ]);
+  const currentId = currentUserId.toString();
+  const tasks = await Task.find({
+    $or: [{ assignedTo: currentUserId }, { createdBy: currentUserId }],
+  })
+    .select("assignedTo createdBy status progress dueDate")
+    .lean();
+
+  const toIdString = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    if (value?._id) return value._id.toString();
+    return value.toString();
+  };
+
+  const collaboratorsInTasks = [];
+  const collaboratorIds = new Set();
+
+  tasks.forEach((task) => {
+    const assignees = Array.isArray(task.assignedTo) ? task.assignedTo : [];
+    const participantIds = new Set(
+      assignees.map((assignee) => toIdString(assignee)).filter(Boolean),
+    );
+
+    const creatorId = toIdString(task.createdBy);
+    if (creatorId) participantIds.add(creatorId);
+
+    participantIds.delete(currentId);
+
+    if (participantIds.size > 0) {
+      participantIds.forEach((id) => collaboratorIds.add(id));
+      collaboratorsInTasks.push({ task, participantIds });
+    }
+  });
+
+  if (collaboratorIds.size === 0) {
+    return [];
+  }
+
+  const users = await User.find({ _id: { $in: Array.from(collaboratorIds) } })
+    .select("_id username email role profileImageUrl")
+    .lean();
 
   const summaryMap = new Map(
     users.map((user) => [
@@ -49,24 +84,9 @@ export const buildWorkspaceTeamMembersSummary = async (currentUserId) => {
     ]),
   );
 
-  const toIdString = (value) => {
-    if (!value) return null;
-    if (typeof value === "string") return value;
-    if (value?._id) return value._id.toString();
-    return value.toString();
-  };
-
-  tasks.forEach((task) => {
+  collaboratorsInTasks.forEach(({ task, participantIds }) => {
     const taskProgress = getTaskProgress(task);
     const overdue = isTaskOverdue(task);
-
-    const assignees = Array.isArray(task.assignedTo) ? task.assignedTo : [];
-    const participantIds = new Set(
-      assignees.map((assignee) => toIdString(assignee)).filter(Boolean),
-    );
-
-    const creatorId = toIdString(task.createdBy);
-    if (creatorId) participantIds.add(creatorId);
 
     participantIds.forEach((participantId) => {
       const summary = summaryMap.get(participantId);
@@ -77,7 +97,10 @@ export const buildWorkspaceTeamMembersSummary = async (currentUserId) => {
 
       if (task.status === "Pending") {
         summary.pendingTasks += 1;
-      } else if (task.status === "In-Progress") {
+      } else if (
+        task.status === "In-Progress" ||
+        task.status === "In Progress"
+      ) {
         summary.inProgressTasks += 1;
       } else if (task.status === "Completed") {
         summary.completedTasks += 1;
@@ -93,8 +116,10 @@ export const buildWorkspaceTeamMembersSummary = async (currentUserId) => {
     });
   });
 
-  return Array.from(summaryMap.values()).sort((a, b) => {
-    if (b.taskCount !== a.taskCount) return b.taskCount - a.taskCount;
-    return (a.username || "").localeCompare(b.username || "");
-  });
+  return Array.from(summaryMap.values())
+    .filter((member) => member.taskCount > 0)
+    .sort((a, b) => {
+      if (b.taskCount !== a.taskCount) return b.taskCount - a.taskCount;
+      return (a.username || "").localeCompare(b.username || "");
+    });
 };

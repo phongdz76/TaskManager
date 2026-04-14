@@ -1054,7 +1054,7 @@ export const getDashboardData = async (req, res) => {
 
     // Fetch paginated recent tasks
     const recentTaskDocs = await Task.find()
-      .sort({ isPinned: -1, createdAt: -1, _id: -1 })
+      .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(limit)
       .select(
@@ -1106,6 +1106,7 @@ export const getDashboardData = async (req, res) => {
 export const getUserDashboardData = async (req, res) => {
   try {
     const userId = req.user._id;
+    const applyPinnedSort = req.query.applyPinnedSort === "true";
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.min(
       Math.max(parseInt(req.query.limit, 10) || 10, 1),
@@ -1175,7 +1176,11 @@ export const getUserDashboardData = async (req, res) => {
 
     // Fetch paginated tasks for user
     const recentTaskDocs = await Task.find(userFilter)
-      .sort({ isPinned: -1, createdAt: -1, _id: -1 })
+      .sort(
+        applyPinnedSort
+          ? { isPinned: -1, createdAt: -1, _id: -1 }
+          : { createdAt: -1, _id: -1 },
+      )
       .skip(skip)
       .limit(limit)
       .select(

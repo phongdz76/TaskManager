@@ -28,16 +28,26 @@ import PageLoader from "../../components/common/PageLoader";
 import TaskListTable from "../../components/tasks/TaskListTable";
 
 const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
-  <div className="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between hover:shadow-lg transition-shadow duration-300">
+  <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700 flex items-center justify-between hover:shadow-lg transition-shadow duration-300">
     <div>
-      <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-      <h3 className="text-3xl font-bold text-gray-800">{value || 0}</h3>
+      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+        {title}
+      </p>
+      <h3 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
+        {value || 0}
+      </h3>
     </div>
     <div className={`p-4 rounded-xl ${bgColor} ${textColor}`}>{icon}</div>
   </div>
 );
 
-const STATUS_FILTERS = ["All", "Pending", "In-Progress", "Completed", "Overdue"];
+const STATUS_FILTERS = [
+  "All",
+  "Pending",
+  "In-Progress",
+  "Completed",
+  "Overdue",
+];
 
 export default function ManagerAllTasks() {
   useUserAuth();
@@ -100,6 +110,18 @@ export default function ManagerAllTasks() {
     }
   };
 
+  const togglePinTask = async (taskId) => {
+    try {
+      await axiosInstance.patch(API_PATHS.TASKS.TOGGLE_PIN(taskId));
+      getTasks(currentPage, statusFilter);
+      toast.success("Task pin status updated!");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to toggle pin status",
+      );
+    }
+  };
+
   const fetchAdmins = async () => {
     try {
       const response = await axiosInstance.get(API_PATHS.USERS.GET_ADMINS);
@@ -121,7 +143,7 @@ export default function ManagerAllTasks() {
   ) => {
     setLoading(true);
     try {
-      let url = `${API_PATHS.TASKS.GET_ALL_TASKS}?page=${page}&limit=10&ignorePinned=true`;
+      let url = `${API_PATHS.TASKS.GET_ALL_TASKS}?page=${page}&limit=10`;
       if (currentStatusFilter && currentStatusFilter !== "All") {
         url += `&status=${currentStatusFilter}`;
       }
@@ -198,10 +220,10 @@ export default function ManagerAllTasks() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
               All Tasks Overview
             </h1>
-            <p className="mt-2 text-gray-500">
+            <p className="mt-2 text-gray-500 dark:text-gray-400">
               Manage and track all tasks created by system.
             </p>
           </div>
@@ -213,7 +235,7 @@ export default function ManagerAllTasks() {
             />
             <button
               onClick={() => getTasks(currentPage, statusFilter)}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm flex items-center"
+              className="px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 transition-colors shadow-sm flex items-center"
             >
               <FaSpinner className={`mr-2 ${loading ? "animate-spin" : ""}`} />
               Refresh Data
@@ -231,44 +253,44 @@ export default function ManagerAllTasks() {
                 title="Total User Tasks"
                 value={stats.total}
                 icon={<FaTasks size={24} />}
-                bgColor="bg-indigo-50"
-                textColor="text-indigo-600"
+                bgColor="bg-indigo-50 dark:bg-indigo-900/30"
+                textColor="text-indigo-600 dark:text-indigo-400"
               />
               <SummaryCard
                 title="Pending"
                 value={stats.pending}
                 icon={<FaClock size={24} />}
-                bgColor="bg-yellow-50"
-                textColor="text-yellow-600"
+                bgColor="bg-yellow-50 dark:bg-yellow-900/30"
+                textColor="text-yellow-600 dark:text-yellow-400"
               />
               <SummaryCard
                 title="In Progress"
                 value={stats.inProgress}
                 icon={<FaSpinner size={24} />}
-                bgColor="bg-blue-50"
-                textColor="text-blue-600"
+                bgColor="bg-blue-50 dark:bg-blue-900/30"
+                textColor="text-blue-600 dark:text-blue-400"
               />
               <SummaryCard
                 title="Completed"
                 value={stats.completed}
                 icon={<FaCheckCircle size={24} />}
-                bgColor="bg-green-50"
-                textColor="text-green-600"
+                bgColor="bg-green-50 dark:bg-green-900/30"
+                textColor="text-green-600 dark:text-green-400"
               />
               <SummaryCard
                 title="Overdue"
                 value={stats.overdue}
                 icon={<FaExclamationCircle size={24} />}
-                bgColor="bg-red-50"
-                textColor="text-red-600"
+                bgColor="bg-red-50 dark:bg-red-900/30"
+                textColor="text-red-600 dark:text-red-400"
               />
             </div>
 
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mt-8">
               {/* Task Distribution Pie Chart */}
-              <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-800 mb-6">
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-6">
                   Task Status Distribution
                 </h3>
                 <div className="h-75">
@@ -324,7 +346,7 @@ export default function ManagerAllTasks() {
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="h-full flex items-center justify-center text-gray-400">
+                    <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
                       No data available
                     </div>
                   )}
@@ -333,19 +355,22 @@ export default function ManagerAllTasks() {
             </div>
 
             {/* Tasks Table */}
-            <div className="mt-8 bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100">
+            <div className="mt-8 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                <h3 className="text-lg font-bold text-gray-800">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
                   All Users Tasks
                 </h3>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <div className="relative w-full sm:w-72">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaSearch className="text-gray-400" size={14} />
+                      <FaSearch
+                        className="text-gray-400 dark:text-gray-500"
+                        size={14}
+                      />
                     </div>
                     <input
                       type="text"
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 outline-none"
                       placeholder="Search by title or creator..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -355,7 +380,7 @@ export default function ManagerAllTasks() {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full sm:w-auto px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full sm:w-auto px-3 py-2 border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-900/50 rounded-lg text-sm text-gray-700 dark:text-gray-200 outline-none focus:ring-blue-500 focus:border-blue-500"
                   >
                     {STATUS_FILTERS.map((status) => (
                       <option key={status} value={status}>
@@ -369,6 +394,7 @@ export default function ManagerAllTasks() {
                 tasks={filteredTasks}
                 emptyMessage="No users tasks found."
                 onStatusChange={updateTaskStatus}
+                onTogglePinTask={togglePinTask}
                 onViewTask={(task) =>
                   navigate(`/admin/task-details/${task._id}`)
                 }
@@ -392,7 +418,7 @@ export default function ManagerAllTasks() {
                   totalItems={pagination.totalTasks}
                   itemLabel="tasks"
                   onPageChange={handlePageChange}
-                  containerClassName="mt-6 pt-4 border-t border-gray-100"
+                  containerClassName="mt-6 pt-4 border-t border-gray-100 dark:border-slate-700"
                 />
               )}
             </div>
@@ -403,11 +429,11 @@ export default function ManagerAllTasks() {
       {/* Confirmation Modal */}
       {confirmModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 transform transition-all">
+          <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-xl w-full max-w-md p-6 transform transition-all">
             <h3 className="text-xl font-bold mb-2 text-red-600">Delete Task</h3>
-            <p className="text-gray-600 mb-6 font-medium">
+            <p className="text-gray-600 dark:text-gray-300 mb-6 font-medium">
               Are you sure you want to delete the task{" "}
-              <span className="font-bold text-gray-800">
+              <span className="font-bold text-gray-800 dark:text-gray-100">
                 "{confirmModal.taskTitle}"
               </span>
               ? This action cannot be undone.
@@ -415,7 +441,7 @@ export default function ManagerAllTasks() {
             <div className="flex justify-end space-x-3">
               <button
                 onClick={closeConfirmModal}
-                className="px-4 py-2 font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-slate-700 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
               >
                 Cancel
               </button>

@@ -7,13 +7,19 @@
   --color-primary: #1368EC;
 }
 
+@custom-variant dark (&:is(.dark *));
+
 @layer base {
   html {
     font-family: var(--font-family);
   }
 
   body{
-    background-color: #fcfbfc;
+    @apply bg-[#fcfbfc] text-slate-900 transition-colors duration-300;
     overflow-x: hidden;
+  }
+
+  .dark body {
+    @apply bg-slate-900 text-slate-100;
   }
 }

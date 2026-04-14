@@ -9,6 +9,7 @@ import {
   FaSpinner,
   FaTasks,
   FaUserPlus,
+  FaUser,
   FaTimes,
   FaCalendarAlt,
   FaArrowLeft,
@@ -41,6 +42,37 @@ const MAX_ATTACHMENTS = 20;
 const MAX_ATTACHMENT_URL_LENGTH = 500;
 const MAX_TODO_ITEMS = 50;
 const MAX_TODO_TEXT_LENGTH = 500;
+
+const MemberAvatar = ({
+  imageUrl,
+  displayName,
+  sizeClass = "w-8 h-8",
+  fallbackClass = "bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-gray-400",
+  iconSize = 12,
+}) => {
+  const [hasImageError, setHasImageError] = useState(false);
+  const normalizedImageUrl =
+    typeof imageUrl === "string" ? imageUrl.trim() : "";
+
+  if (!normalizedImageUrl || hasImageError) {
+    return (
+      <span
+        className={`${sizeClass} rounded-full ${fallbackClass} flex items-center justify-center shrink-0`}
+      >
+        <FaUser size={iconSize} />
+      </span>
+    );
+  }
+
+  return (
+    <img
+      src={normalizedImageUrl}
+      alt={displayName || "User"}
+      className={`${sizeClass} rounded-full object-cover border border-gray-200 dark:border-slate-700 shrink-0`}
+      onError={() => setHasImageError(true)}
+    />
+  );
+};
 
 export default function EditTaskPage({
   activeMenu,
@@ -427,15 +459,15 @@ export default function EditTaskPage({
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(resolvedBackToTasksPath)}
-              className="p-3 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors shrink-0"
+              className="p-3 text-gray-500 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/50 rounded-xl transition-colors shrink-0"
               title="Back to Task Manager"
             >
               <FaArrowLeft size={20} />
             </button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Edit Task</h1>
-              <p className="mt-2 font-medium text-gray-700">{todayFormatted}</p>
-              <p className="mt-1 text-gray-500">
+              <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Edit Task</h1>
+              <p className="mt-2 font-medium text-gray-700 dark:text-gray-300">{todayFormatted}</p>
+              <p className="mt-1 text-gray-500 dark:text-gray-400">
                 Update the details for this task.
               </p>
             </div>
@@ -443,7 +475,7 @@ export default function EditTaskPage({
           <button
             onClick={handleRefresh}
             type="button"
-            className="mt-4 md:mt-0 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm flex items-center"
+            className="mt-4 md:mt-0 px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 transition-colors shadow-sm flex items-center"
           >
             <FaSpinner className={`mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh Data
@@ -458,15 +490,15 @@ export default function EditTaskPage({
             className="grid grid-cols-1 lg:grid-cols-3 gap-6"
           >
             <div className="lg:col-span-2 space-y-6">
-              <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-800 mb-5 border-b border-gray-100 pb-3 flex items-center gap-2">
-                  <FaTasks className="text-blue-600" />
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-5 border-b border-gray-100 dark:border-slate-700 pb-3 flex items-center gap-2">
+                  <FaTasks className="text-blue-600 dark:text-blue-400" />
                   Task Information
                 </h3>
 
                 <div className="space-y-5">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Title <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -477,7 +509,7 @@ export default function EditTaskPage({
                       placeholder="E.g., Redesign the landing page"
                       minLength={MIN_TITLE_LENGTH}
                       maxLength={200}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition bg-gray-50/50 focus:bg-white"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 flex-1 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition bg-gray-50/50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 text-gray-800 dark:text-gray-100"
                       required
                     />
                     <p className="text-xs text-gray-400 mt-1 text-right">
@@ -486,7 +518,7 @@ export default function EditTaskPage({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Description
                     </label>
                     <textarea
@@ -496,7 +528,7 @@ export default function EditTaskPage({
                       rows="5"
                       maxLength={2000}
                       placeholder="Provide a detailed description of the task..."
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition bg-gray-50/50 focus:bg-white resize-none"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition bg-gray-50/50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 text-gray-800 dark:text-gray-100 resize-none"
                     ></textarea>
                     <p className="text-xs text-gray-400 mt-1 text-right">
                       {formData.description.length}/2000
@@ -504,8 +536,8 @@ export default function EditTaskPage({
                   </div>
 
                   <div>
-                    <label className="flex text-sm font-medium text-gray-700 mb-2 items-center gap-2">
-                      <FaLink className="text-indigo-500" />
+                    <label className="flex text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 items-center gap-2">
+                      <FaLink className="text-indigo-500 dark:text-indigo-400" />
                       Attachments (File Links)
                     </label>
 
@@ -522,12 +554,12 @@ export default function EditTaskPage({
                           }
                         }}
                         placeholder="Paste file URL (Google Drive, Dropbox, etc.)"
-                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 focus:border-blue-500 outline-none text-sm"
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 focus:border-blue-500 outline-none text-sm dark:bg-slate-800 dark:text-white"
                       />
                       <button
                         type="button"
                         onClick={handleAddAttachment}
-                        className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium flex items-center gap-2 transition text-sm"
+                        className="px-4 py-2.5 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-600 font-medium flex items-center gap-2 transition text-sm"
                       >
                         <FaPlus size={12} /> Add Link
                       </button>
@@ -538,7 +570,7 @@ export default function EditTaskPage({
                         {formData.attachments.map((attachment, index) => (
                           <li
                             key={`${attachment}-${index}`}
-                            className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100"
+                            className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-slate-900/50 rounded-xl border border-gray-100 dark:border-slate-700"
                           >
                             <a
                               href={attachment}
@@ -568,9 +600,9 @@ export default function EditTaskPage({
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-800 mb-5 border-b border-gray-100 pb-3 flex items-center gap-2">
-                  <FaUserPlus className="text-indigo-600" />
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-5 border-b border-gray-100 dark:border-slate-700 pb-3 flex items-center gap-2">
+                  <FaUserPlus className="text-indigo-600 dark:text-indigo-400" />
                   Assign Members
                 </h3>
 
@@ -579,19 +611,15 @@ export default function EditTaskPage({
                     {getAssignedUsers().map((u) => (
                       <span
                         key={u._id}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-sm font-medium"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/50 rounded-full text-sm font-medium"
                       >
-                        {u.profileImageUrl ? (
-                          <img
-                            src={u.profileImageUrl}
-                            alt=""
-                            className="w-5 h-5 rounded-full object-cover"
-                          />
-                        ) : (
-                          <span className="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-[10px] font-bold text-blue-700">
-                            {(u.username || u.name || "?")[0].toUpperCase()}
-                          </span>
-                        )}
+                        <MemberAvatar
+                          imageUrl={u.profileImageUrl}
+                          displayName={u.username || u.name}
+                          sizeClass="w-5 h-5"
+                          fallbackClass="bg-blue-200 dark:bg-blue-800 text-blue-700 dark:text-blue-200"
+                          iconSize={10}
+                        />
                         {u.username || u.name}
                         <button
                           type="button"
@@ -613,10 +641,10 @@ export default function EditTaskPage({
                     setAssigneePage(1);
                   }}
                   placeholder="Search users by name or email..."
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-blue-500 outline-none mb-3 text-sm"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 focus:border-blue-500 outline-none mb-3 text-sm dark:bg-slate-800 dark:text-white"
                 />
 
-                <div className="max-h-55 overflow-y-auto rounded-xl border border-gray-100">
+                <div className="max-h-55 overflow-y-auto rounded-xl border border-gray-100 dark:border-slate-700">
                   {paginatedUsers.length > 0 ? (
                     paginatedUsers.map((u) => {
                       const isSelected = formData.assignedTo.includes(u._id);
@@ -625,26 +653,22 @@ export default function EditTaskPage({
                           key={u._id}
                           type="button"
                           onClick={() => toggleAssignee(u._id)}
-                          className={`w-full flex items-center gap-3 px-4 py-3 text-left transition border-b border-gray-50 last:border-b-0 ${
-                            isSelected ? "bg-blue-50/70" : "hover:bg-gray-50/70"
+                          className={`w-full flex items-center gap-3 px-4 py-3 text-left transition border-b border-gray-50 dark:border-slate-700/50 last:border-b-0 ${
+                            isSelected ? "bg-blue-50/70 dark:bg-blue-900/30" : "hover:bg-gray-50/70 dark:hover:bg-slate-700/50"
                           }`}
                         >
-                          {u.profileImageUrl ? (
-                            <img
-                              src={u.profileImageUrl}
-                              alt=""
-                              className="w-8 h-8 rounded-full object-cover border border-gray-200"
-                            />
-                          ) : (
-                            <span className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
-                              {(u.username || u.name || "?")[0].toUpperCase()}
-                            </span>
-                          )}
+                          <MemberAvatar
+                            imageUrl={u.profileImageUrl}
+                            displayName={u.username || u.name}
+                            sizeClass="w-8 h-8"
+                            fallbackClass="bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-gray-400"
+                            iconSize={12}
+                          />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-800 truncate">
+                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
                               {u.username || u.name}
                             </p>
-                            <p className="text-xs text-gray-500 truncate">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                               {u.email}
                             </p>
                           </div>
@@ -652,7 +676,7 @@ export default function EditTaskPage({
                             className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition ${
                               isSelected
                                 ? "bg-blue-600 border-blue-600"
-                                : "border-gray-300"
+                                : "border-gray-300 dark:border-slate-500"
                             }`}
                           >
                             {isSelected && (
@@ -693,8 +717,8 @@ export default function EditTaskPage({
                 )}
               </div>
 
-              <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-800 mb-5 border-b border-gray-100 pb-3">
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-5 border-b border-gray-100 dark:border-slate-700 pb-3">
                   Todo Checklist
                 </h3>
 
@@ -711,12 +735,12 @@ export default function EditTaskPage({
                       }
                     }}
                     placeholder="Add a sub-task..."
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 focus:border-blue-500 outline-none text-sm"
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 focus:border-blue-500 outline-none text-sm dark:bg-slate-800 dark:text-white"
                   />
                   <button
                     type="button"
                     onClick={handleAddTodo}
-                    className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium flex items-center gap-2 transition text-sm"
+                    className="px-4 py-2.5 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-600 font-medium flex items-center gap-2 transition text-sm"
                   >
                     <FaPlus size={12} /> Add
                   </button>
@@ -727,13 +751,13 @@ export default function EditTaskPage({
                     {formData.todoChecklist.map((todo, index) => (
                       <li
                         key={index}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 group"
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-900/50 rounded-xl border border-gray-100 dark:border-slate-700 group"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                          <span className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold shrink-0">
                             {index + 1}
                           </span>
-                          <span className="text-gray-700 text-sm">
+                          <span className="text-gray-700 dark:text-gray-300 text-sm">
                             {todo.text}
                           </span>
                         </div>
@@ -748,7 +772,7 @@ export default function EditTaskPage({
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-gray-400 italic text-center py-6 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                  <p className="text-sm text-gray-400 italic text-center py-6 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-gray-200 dark:border-slate-700">
                     No sub-tasks added yet. Type above and press Enter or click
                     Add.
                   </p>
@@ -757,8 +781,8 @@ export default function EditTaskPage({
             </div>
 
             <div className="space-y-6">
-              <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-800 mb-5 border-b border-gray-100 pb-3">
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-5 border-b border-gray-100 dark:border-slate-700 pb-3">
                   Settings
                 </h3>
 
@@ -809,7 +833,7 @@ export default function EditTaskPage({
                   </div>
 
                   <div>
-                    <label className="flex text-sm font-medium text-gray-700 mb-2 items-center gap-2">
+                    <label className="flex text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 items-center gap-2">
                       <FaCalendarAlt className="text-green-500" />
                       Start Date
                     </label>
@@ -819,7 +843,7 @@ export default function EditTaskPage({
                       value={formData.startDate}
                       min={startDateMin}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none text-gray-700 text-sm"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 focus:border-blue-500 outline-none text-gray-700 dark:text-white text-sm dark:bg-slate-800"
                     />
                     <p className="text-xs text-gray-400 mt-1">
                       Original start date is preserved.
@@ -827,7 +851,7 @@ export default function EditTaskPage({
                   </div>
 
                   <div>
-                    <label className="flex text-sm font-medium text-gray-700 mb-2 items-center gap-2">
+                    <label className="flex text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 items-center gap-2">
                       <FaCalendarAlt className="text-red-400" />
                       Due Date
                     </label>
@@ -837,16 +861,16 @@ export default function EditTaskPage({
                       value={formData.dueDate}
                       min={dueDateMin}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none text-gray-700 text-sm"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 focus:border-blue-500 outline-none text-gray-700 dark:text-white text-sm dark:bg-slate-800"
                     />
                   </div>
 
                   {formData.dueDate && (
-                    <div className="bg-linear-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
-                      <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-1">
+                    <div className="bg-linear-to-r from-blue-50 dark:from-blue-900/20 to-indigo-50 dark:to-indigo-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                      <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wider mb-1">
                         Timeline
                       </p>
-                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                         <span className="font-medium">
                           {formData.startDate
                             ? moment(formData.startDate).format("MMM DD")
@@ -860,7 +884,7 @@ export default function EditTaskPage({
                           {moment(formData.dueDate).format("MMM DD")}
                         </span>
                       </div>
-                      <p className="text-xs text-blue-600 mt-2">
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
                         {moment(formData.dueDate).diff(
                           formData.startDate
                             ? moment(formData.startDate)
@@ -874,46 +898,46 @@ export default function EditTaskPage({
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100">
-                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700">
+                <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
                   Summary
                 </h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Priority</span>
+                    <span className="text-gray-500 dark:text-gray-400">Priority</span>
                     <span
                       className={`font-semibold ${
                         formData.priority === "High"
-                          ? "text-red-600"
+                          ? "text-red-600 dark:text-red-400"
                           : formData.priority === "Medium"
-                            ? "text-yellow-600"
-                            : "text-green-600"
+                            ? "text-yellow-600 dark:text-yellow-500"
+                            : "text-green-600 dark:text-green-400"
                       }`}
                     >
                       {formData.priority}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Assignees</span>
-                    <span className="font-semibold text-gray-800">
+                    <span className="text-gray-500 dark:text-gray-400">Assignees</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">
                       {formData.assignedTo.length}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Sub-tasks</span>
-                    <span className="font-semibold text-gray-800">
+                    <span className="text-gray-500 dark:text-gray-400">Sub-tasks</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">
                       {formData.todoChecklist.length}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Attachments</span>
-                    <span className="font-semibold text-gray-800">
+                    <span className="text-gray-500 dark:text-gray-400">Attachments</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">
                       {formData.attachments.length}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Due Date</span>
-                    <span className="font-semibold text-gray-800">
+                    <span className="text-gray-500 dark:text-gray-400">Due Date</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">
                       {formData.dueDate
                         ? moment(formData.dueDate).format("MMM DD, YYYY")
                         : "Not set"}
@@ -922,17 +946,17 @@ export default function EditTaskPage({
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 mb-4 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+              <div className="flex items-center gap-3 mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-xl">
                 <input
                   type="checkbox"
                   id="syncCalendar"
                   checked={syncToCalendar}
                   onChange={(e) => setSyncToCalendar(e.target.checked)}
-                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer accent-blue-600"
+                  className="w-5 h-5 text-blue-600 border-gray-300 dark:border-slate-600 dark:bg-slate-800 rounded focus:ring-blue-500 cursor-pointer accent-blue-600"
                 />
                 <label
                   htmlFor="syncCalendar"
-                  className="text-sm font-semibold text-blue-900 cursor-pointer"
+                  className="text-sm font-semibold text-blue-900 dark:text-blue-300 cursor-pointer"
                 >
                   Sync to Google Calendar after updating
                 </label>

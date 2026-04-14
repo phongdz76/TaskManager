@@ -8,9 +8,8 @@ export default function CreateTask() {
   return (
     <CreateTaskPage
       description="Fill in the details below to create a new task."
-      successMode="navigate"
-      successRedirectPath="/user/dashboard"
-      successMessage="Task created successfully!"
+      successMode="reset"
+      successMessage="Task created successfully. You can create another task."
       emptyAssigneeText="You (default)"
     />
   );

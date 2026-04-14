@@ -11,6 +11,7 @@ import {
   FaSpinner,
   FaCheckCircle,
   FaExclamationCircle,
+  FaUser,
 } from "react-icons/fa";
 import {
   PieChart,
@@ -31,14 +32,41 @@ import PageContainer from "../../components/common/PageContainer";
 import PageLoader from "../../components/common/PageLoader";
 
 const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
-  <div className="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between hover:shadow-lg transition-shadow duration-300">
+  <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700 flex items-center justify-between hover:shadow-lg transition-shadow duration-300">
     <div>
-      <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-      <h3 className="text-3xl font-bold text-gray-800">{value || 0}</h3>
+      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+        {title}
+      </p>
+      <h3 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
+        {value || 0}
+      </h3>
     </div>
     <div className={`p-4 rounded-xl ${bgColor} ${textColor}`}>{icon}</div>
   </div>
 );
+
+const CreatorAvatar = ({ imageUrl, creatorName }) => {
+  const [hasImageError, setHasImageError] = useState(false);
+  const normalizedImageUrl =
+    typeof imageUrl === "string" ? imageUrl.trim() : "";
+
+  if (!normalizedImageUrl || hasImageError) {
+    return (
+      <div className="w-6 h-6 rounded-full border border-gray-200 dark:border-slate-700 bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 flex items-center justify-center mr-2">
+        <FaUser size={11} />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={normalizedImageUrl}
+      alt={creatorName}
+      className="w-6 h-6 rounded-full object-cover mr-2 border border-gray-200 dark:border-slate-700"
+      onError={() => setHasImageError(true)}
+    />
+  );
+};
 
 const PAGE_LIMIT = 10;
 
@@ -130,15 +158,15 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
               Admin Dashboard
             </h1>
-            <p className="mt-2 font-medium text-gray-700">
+            <p className="mt-2 font-medium text-gray-700 dark:text-gray-300">
               {moment().format("dddd, MMMM Do YYYY")}
             </p>
-            <p className="mt-2 text-gray-500">
+            <p className="mt-2 text-gray-500 dark:text-gray-400">
               Welcome back,{" "}
-              <span className="font-medium text-gray-700">
+              <span className="font-medium text-gray-700 dark:text-gray-200">
                 {user?.name || user?.username || "Admin"}
               </span>
               . Here's what's happening today.
@@ -146,7 +174,7 @@ export default function Dashboard() {
           </div>
           <button
             onClick={() => getDashboardData(currentPage)}
-            className="mt-4 md:mt-0 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm flex items-center"
+            className="mt-4 md:mt-0 px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 transition-colors shadow-sm flex items-center"
           >
             <FaSpinner className={`mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh Data
@@ -163,44 +191,44 @@ export default function Dashboard() {
                 title="Total Tasks"
                 value={stats.totalTasks}
                 icon={<FaTasks size={24} />}
-                bgColor="bg-indigo-50"
-                textColor="text-indigo-600"
+                bgColor="bg-indigo-50 dark:bg-indigo-900/30"
+                textColor="text-indigo-600 dark:text-indigo-400"
               />
               <SummaryCard
                 title="Pending"
                 value={stats.pendingTasks}
                 icon={<FaClock size={24} />}
-                bgColor="bg-yellow-50"
-                textColor="text-yellow-600"
+                bgColor="bg-yellow-50 dark:bg-yellow-900/30"
+                textColor="text-yellow-600 dark:text-yellow-400"
               />
               <SummaryCard
                 title="In Progress"
                 value={stats.inProgressTasks}
                 icon={<FaSpinner size={24} />}
-                bgColor="bg-blue-50"
-                textColor="text-blue-600"
+                bgColor="bg-blue-50 dark:bg-blue-900/30"
+                textColor="text-blue-600 dark:text-blue-400"
               />
               <SummaryCard
                 title="Completed"
                 value={stats.completedTasks}
                 icon={<FaCheckCircle size={24} />}
-                bgColor="bg-green-50"
-                textColor="text-green-600"
+                bgColor="bg-green-50 dark:bg-green-900/30"
+                textColor="text-green-600 dark:text-green-400"
               />
               <SummaryCard
                 title="Overdue"
                 value={stats.overdueTasks}
                 icon={<FaExclamationCircle size={24} />}
-                bgColor="bg-red-50"
-                textColor="text-red-600"
+                bgColor="bg-red-50 dark:bg-red-900/30"
+                textColor="text-red-600 dark:text-red-400"
               />
             </div>
 
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
               {/* Task Distribution Pie Chart */}
-              <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-800 mb-6">
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-6">
                   Task Distribution
                 </h3>
                 <div className="h-75">
@@ -256,7 +284,7 @@ export default function Dashboard() {
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="h-full flex items-center justify-center text-gray-400">
+                    <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
                       No data available
                     </div>
                   )}
@@ -264,8 +292,8 @@ export default function Dashboard() {
               </div>
 
               {/* Priority Bar Chart */}
-              <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-800 mb-6">
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-6">
                   Tasks by Priority
                 </h3>
                 <div className="h-75">
@@ -311,7 +339,7 @@ export default function Dashboard() {
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="h-full flex items-center justify-center text-gray-400">
+                    <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
                       No data available
                     </div>
                   )}
@@ -320,14 +348,14 @@ export default function Dashboard() {
             </div>
 
             {/* Recent Tasks Table */}
-            <div className="mt-8 bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100">
+            <div className="mt-8 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-gray-800">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
                   Recent Tasks
                 </h3>
                 <button
                   onClick={() => navigate("/admin/all-user-tasks")}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                  className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline"
                 >
                   View All
                 </button>
@@ -335,7 +363,7 @@ export default function Dashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-200 text-left">
                   <thead>
-                    <tr className="border-b border-gray-100 uppercase text-xs tracking-wider text-gray-500">
+                    <tr className="border-b border-gray-100 dark:border-slate-700 uppercase text-xs tracking-wider text-gray-500 dark:text-gray-400">
                       <th className="pb-4 px-4 font-semibold w-[30%]">Title</th>
                       <th className="pb-4 px-4 font-semibold w-[18%]">
                         Created By
@@ -359,11 +387,11 @@ export default function Dashboard() {
                       dashboardData.recentTasks.map((task) => (
                         <tr
                           key={task._id}
-                          className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors group"
+                          className="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors group"
                         >
                           <td className="py-4 px-4 align-top">
                             <p
-                              className="text-gray-800 font-semibold whitespace-normal wrap-break-word leading-6"
+                              className="text-gray-800 dark:text-gray-100 font-semibold whitespace-normal wrap-break-word leading-6"
                               title={task.title}
                             >
                               {task.title}
@@ -372,28 +400,19 @@ export default function Dashboard() {
                           <td className="py-4 px-4 align-top">
                             {task.createdBy ? (
                               <div className="flex items-center">
-                                {task.createdBy.profileImageUrl ? (
-                                  <img
-                                    src={task.createdBy.profileImageUrl}
-                                    alt={task.createdBy.username}
-                                    className="w-6 h-6 rounded-full object-cover mr-2 border border-gray-200"
-                                  />
-                                ) : (
-                                  <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold mr-2">
-                                    {task.createdBy.username
-                                      .charAt(0)
-                                      .toUpperCase()}
-                                  </div>
-                                )}
+                                <CreatorAvatar
+                                  imageUrl={task.createdBy.profileImageUrl}
+                                  creatorName={task.createdBy.username}
+                                />
                                 <span
-                                  className="text-sm text-gray-700 truncate"
+                                  className="text-sm text-gray-700 dark:text-gray-300 truncate"
                                   title={task.createdBy.email}
                                 >
                                   {task.createdBy.username}
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-sm text-gray-400 italic">
+                              <span className="text-sm text-gray-400 dark:text-gray-500 italic">
                                 Unknown
                               </span>
                             )}
@@ -402,10 +421,10 @@ export default function Dashboard() {
                             <span
                               className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
                                 task.status === "Pending"
-                                  ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                  ? "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-700/50"
                                   : task.status === "In-Progress"
-                                    ? "bg-blue-50 text-blue-700 border-blue-200"
-                                    : "bg-green-50 text-green-700 border-green-200"
+                                    ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700/50"
+                                    : "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700/50"
                               }`}
                             >
                               {task.status === "In-Progress"
@@ -417,22 +436,22 @@ export default function Dashboard() {
                             <span
                               className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
                                 task.priority === "Low"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700/50"
                                   : task.priority === "Medium"
-                                    ? "bg-orange-50 text-orange-700 border-orange-200"
-                                    : "bg-red-50 text-red-700 border-red-200"
+                                    ? "bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-700/50"
+                                    : "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-700/50"
                               }`}
                             >
                               {task.priority}
                             </span>
                           </td>
-                          <td className="py-4 px-4 align-top text-sm text-gray-500 font-medium">
+                          <td className="py-4 px-4 align-top text-sm text-gray-500 dark:text-gray-400 font-medium">
                             {task.createdAt
                               ? moment(task.createdAt).format("MMM DD, YYYY")
                               : "N/A"}
                           </td>
                           <td className="py-4 px-4 align-top text-sm">
-                            <div className="font-medium text-gray-500">
+                            <div className="font-medium text-gray-500 dark:text-gray-300">
                               {task.dueDate
                                 ? moment(task.dueDate).format("MMM DD, YYYY")
                                 : "No due date"}
@@ -454,7 +473,7 @@ export default function Dashboard() {
                       <tr>
                         <td
                           colSpan="6"
-                          className="py-8 text-center text-gray-500"
+                          className="py-8 text-center text-gray-500 dark:text-gray-400"
                         >
                           No recent tasks found.
                         </td>
@@ -471,7 +490,7 @@ export default function Dashboard() {
                   totalItems={pagination.totalTasks}
                   itemLabel="tasks"
                   onPageChange={handlePageChange}
-                  containerClassName="mt-6 pt-4 border-t border-gray-100"
+                  containerClassName="mt-6 pt-4 border-t border-gray-100 dark:border-slate-700"
                 />
               )}
             </div>

@@ -20,13 +20,23 @@ import PageContainer from "../../components/common/PageContainer";
 import PageLoader from "../../components/common/PageLoader";
 import TaskListTable from "../../components/tasks/TaskListTable";
 
-const STATUS_FILTERS = ["All", "Pending", "In-Progress", "Completed", "Overdue"];
+const STATUS_FILTERS = [
+  "All",
+  "Pending",
+  "In-Progress",
+  "Completed",
+  "Overdue",
+];
 
 const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
-  <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center justify-between">
+  <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700 flex items-center justify-between">
     <div>
-      <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-      <h3 className="text-2xl font-bold text-gray-800">{value || 0}</h3>
+      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+        {title}
+      </p>
+      <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+        {value || 0}
+      </h3>
     </div>
     <div className={`p-3 rounded-xl ${bgColor} ${textColor}`}>{icon}</div>
   </div>
@@ -169,8 +179,10 @@ export default function MyTasks() {
       <PageContainer>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">My Tasks</h1>
-            <p className="mt-2 text-gray-500">
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
+              My Tasks
+            </h1>
+            <p className="mt-2 text-gray-500 dark:text-gray-400">
               Track your assigned and created tasks, then open details to update
               checklist progress.
             </p>
@@ -185,7 +197,7 @@ export default function MyTasks() {
             <button
               onClick={fetchTasks}
               disabled={loading}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm flex items-center disabled:opacity-60"
+              className="px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 transition-colors shadow-sm flex items-center disabled:opacity-60"
             >
               <FaSpinner className={`mr-2 ${loading ? "animate-spin" : ""}`} />
               Refresh
@@ -198,51 +210,56 @@ export default function MyTasks() {
             title="Total Tasks"
             value={summary.total}
             icon={<FaTasks size={20} />}
-            bgColor="bg-indigo-50"
-            textColor="text-indigo-600"
+            bgColor="bg-indigo-50 dark:bg-indigo-900/30"
+            textColor="text-indigo-600 dark:text-indigo-400"
           />
           <SummaryCard
             title="Pending"
             value={summary.pending}
             icon={<FaClock size={20} />}
-            bgColor="bg-yellow-50"
-            textColor="text-yellow-600"
+            bgColor="bg-yellow-50 dark:bg-yellow-900/30"
+            textColor="text-yellow-600 dark:text-yellow-400"
           />
           <SummaryCard
             title="In Progress"
             value={summary.inProgress}
             icon={<FaSpinner size={20} />}
-            bgColor="bg-blue-50"
-            textColor="text-blue-600"
+            bgColor="bg-blue-50 dark:bg-blue-900/30"
+            textColor="text-blue-600 dark:text-blue-400"
           />
           <SummaryCard
             title="Completed"
             value={summary.completed}
             icon={<FaCheckCircle size={20} />}
-            bgColor="bg-green-50"
-            textColor="text-green-600"
+            bgColor="bg-green-50 dark:bg-green-900/30"
+            textColor="text-green-600 dark:text-green-400"
           />
           <SummaryCard
             title="Overdue"
             value={summary.overdue}
             icon={<FaExclamationCircle size={20} />}
-            bgColor="bg-red-50"
-            textColor="text-red-600"
+            bgColor="bg-red-50 dark:bg-red-900/30"
+            textColor="text-red-600 dark:text-red-400"
           />
         </div>
 
-        <div className="mt-8 bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100">
+        <div className="mt-8 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-            <h3 className="text-lg font-bold text-gray-800">Task List</h3>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+              Task List
+            </h3>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
               <div className="relative w-full sm:w-72">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaSearch className="text-gray-400" size={14} />
+                  <FaSearch
+                    className="text-gray-400 dark:text-gray-500"
+                    size={14}
+                  />
                 </div>
                 <input
                   type="text"
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 outline-none"
                   placeholder="Search by title or creator..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -255,7 +272,7 @@ export default function MyTasks() {
                   setStatusFilter(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-900/50 rounded-lg text-sm text-gray-700 dark:text-gray-200 outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 {STATUS_FILTERS.map((status) => (
                   <option key={status} value={status}>
@@ -300,7 +317,7 @@ export default function MyTasks() {
               totalItems={pagination.totalTasks}
               itemLabel="tasks"
               onPageChange={handlePageChange}
-              containerClassName="mt-6 pt-4 border-t border-gray-100"
+              containerClassName="mt-6 pt-4 border-t border-gray-100 dark:border-slate-700"
             />
           )}
         </div>

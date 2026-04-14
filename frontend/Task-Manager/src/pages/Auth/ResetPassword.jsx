@@ -126,7 +126,7 @@ export default function ResetPassword() {
 
             <Link
               to="/login"
-              className="w-full flex justify-end items-center gap-2 text-sm text-gray-600 hover:text-blue-500 transition mb-3"
+              className="w-full flex justify-end items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition mb-3"
             >
               <AiOutlineArrowLeft />
               Back to Login

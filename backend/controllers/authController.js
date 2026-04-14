@@ -105,7 +105,6 @@ export const registerUser = async (req, res) => {
       username: username.trim(),
       email,
       password: hashedPassword,
-      adminInviteToken, // Store the invite token if provided (optional, can be removed if not needed after registration)
       role: "user", // Self-registration always creates a regular user.
     });
 
@@ -113,7 +112,6 @@ export const registerUser = async (req, res) => {
       _id: user._id,
       name: user.username,
       email: user.email,
-      adminInviteToken: user.adminInviteToken,
       role: user.role,
       token: generateToken(user._id),
     });
@@ -409,6 +407,28 @@ export const googleCallback = async (req, res) => {
   }
 
   try {
+    const toSafeHttpUrl = (rawValue) => {
+      if (typeof rawValue !== "string") return null;
+      const trimmed = rawValue.trim();
+      if (!trimmed) return null;
+
+      const normalized = normalizeOptionalHttpUrl(trimmed);
+      if (normalized.isValid && normalized.value) {
+        return normalized.value;
+      }
+
+      try {
+        const parsed = new URL(trimmed);
+        if (["http:", "https:"].includes(parsed.protocol)) {
+          return parsed.toString();
+        }
+      } catch {
+        return null;
+      }
+
+      return null;
+    };
+
     // 1. Exchange authorization code for access token
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -438,22 +458,34 @@ export const googleCallback = async (req, res) => {
       return res.redirect(`${clientUrl}/login?error=userinfo_failed`);
     }
 
+    let googleAvatarUrl = toSafeHttpUrl(googleUser.picture);
+
+    if (!googleAvatarUrl) {
+      // Fallback endpoint for accounts where v2 userinfo does not include picture.
+      const fallbackUserInfoRes = await fetch(
+        "https://openidconnect.googleapis.com/v1/userinfo",
+        {
+          headers: { Authorization: `Bearer ${tokenData.access_token}` },
+        },
+      );
+
+      if (fallbackUserInfoRes.ok) {
+        const fallbackUser = await fallbackUserInfoRes.json();
+        googleAvatarUrl = toSafeHttpUrl(fallbackUser.picture);
+      }
+    }
+
     // 3. Find or create user in DB
     let user = await User.findOne({ googleId: googleUser.id });
-    const normalizedGooglePicture = normalizeOptionalHttpUrl(
-      googleUser.picture,
-    );
+
     if (!user) {
       user = await User.findOne({ email: googleUser.email });
       if (user) {
         // Link Google ID to existing email account
         user.googleId = googleUser.id;
-        if (
-          !user.profileImageUrl &&
-          normalizedGooglePicture.isValid &&
-          normalizedGooglePicture.value
-        ) {
-          user.profileImageUrl = normalizedGooglePicture.value;
+        // Preserve existing avatar if user has already set one.
+        if (!user.profileImageUrl && googleAvatarUrl) {
+          user.profileImageUrl = googleAvatarUrl;
         }
         await user.save();
       } else {
@@ -462,20 +494,31 @@ export const googleCallback = async (req, res) => {
           googleId: googleUser.id,
           username: googleUser.name,
           email: googleUser.email,
-          profileImageUrl:
-            normalizedGooglePicture.isValid && normalizedGooglePicture.value
-              ? normalizedGooglePicture.value
-              : null,
+          profileImageUrl: googleAvatarUrl,
           role: "user",
         });
       }
+    } else if (!user.profileImageUrl && googleAvatarUrl) {
+      // Backfill avatar only when the account has no profile image.
+      user.profileImageUrl = googleAvatarUrl;
+      await user.save();
     }
 
     // 4. Issue JWT and redirect to frontend
     const token = generateToken(user._id);
-    res.redirect(
-      `${clientUrl}/oauth-callback?token=${token}&name=${encodeURIComponent(user.username)}&role=${user.role}`,
-    );
+    const redirectParams = new URLSearchParams({
+      token,
+      name: user.username || "",
+      role: user.role || "user",
+      _id: user._id.toString(),
+      email: user.email || "",
+    });
+
+    if (user.profileImageUrl) {
+      redirectParams.set("profileImageUrl", user.profileImageUrl);
+    }
+
+    res.redirect(`${clientUrl}/oauth-callback?${redirectParams.toString()}`);
   } catch (err) {
     res.redirect(`${clientUrl}/login?error=server_error`);
   }

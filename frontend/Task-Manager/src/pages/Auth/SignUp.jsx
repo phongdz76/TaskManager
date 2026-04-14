@@ -201,9 +201,9 @@ export default function SignUp() {
               />
 
               <div className="flex items-center gap-4 my-2">
-                <div className="flex-1 h-px bg-gray-300"></div>
-                <span className="text-sm text-gray-500">OR</span>
-                <div className="flex-1 h-px bg-gray-300"></div>
+                <div className="flex-1 h-px bg-gray-300 dark:bg-slate-700"></div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">OR</span>
+                <div className="flex-1 h-px bg-gray-300 dark:bg-slate-700"></div>
               </div>
 
               <Button
@@ -215,11 +215,11 @@ export default function SignUp() {
               />
             </form>
 
-            <p className="text-center text-sm text-gray-600">
+            <p className="text-center text-sm text-gray-600 dark:text-gray-400">
               Already have an account?
               <Link
                 to="/login"
-                className="text-blue-500 hover:underline ml-2 font-medium"
+                className="text-blue-500 dark:text-blue-400 hover:underline ml-2 font-medium"
               >
                 Login
               </Link>

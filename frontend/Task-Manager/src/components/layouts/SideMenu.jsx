@@ -39,7 +39,7 @@ export default function SideMenu({ activeMenu }) {
   }, [avatarUrl]);
 
   return (
-    <div className="w-64 h-[calc(100vh-61px)] bg-white border-r border-gray-200/50 sticky top-15.25 p-3">
+    <div className="w-64 h-[calc(100vh-61px)] bg-white dark:bg-slate-800 border-r border-gray-200/50 dark:border-slate-700 sticky top-15.25 p-3 transition-colors duration-300">
       <div className="flex flex-col items-center justify-center mb-6 pt-2">
         <div className="relative">
           {avatarUrl && !avatarLoadError ? (
@@ -50,8 +50,8 @@ export default function SideMenu({ activeMenu }) {
               onError={() => setAvatarLoadError(true)}
             />
           ) : (
-            <div className="w-20 h-20 rounded-full border border-gray-200 bg-gray-100 flex items-center justify-center">
-              <FaUser className="text-3xl text-gray-500" />
+            <div className="w-20 h-20 rounded-full border border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
+              <FaUser className="text-3xl text-gray-500 dark:text-gray-400" />
             </div>
           )}
         </div>
@@ -62,10 +62,10 @@ export default function SideMenu({ activeMenu }) {
           </div>
         )}
 
-        <h5 className="text-gray-950 font-medium leading-6 mt-3">
+        <h5 className="text-gray-950 dark:text-gray-100 font-medium leading-6 mt-3">
           {user?.name || user?.username || "N/A"}
         </h5>
-        <p className="text-sm text-gray-500">{user?.email || ""}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email || ""}</p>
       </div>
 
       {sideMenuData.map((item) => {
@@ -79,8 +79,8 @@ export default function SideMenu({ activeMenu }) {
             onClick={() => handleClick(item.path)}
             className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-left transition ${
               isActive
-                ? "bg-blue-100 text-blue-700"
-                : "text-gray-700 hover:bg-gray-100"
+                ? "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400"
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
             }`}
           >
             <Icon className="text-lg" />

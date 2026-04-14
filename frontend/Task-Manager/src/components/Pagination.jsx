@@ -40,17 +40,17 @@ export default function Pagination({
       <div
         className={`flex items-center justify-between ${containerClassName}`}
       >
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           Page{" "}
-          <span className="font-semibold text-gray-700">{currentPage}</span> of{" "}
-          <span className="font-semibold text-gray-700">{totalPages}</span>
+          <span className="font-semibold text-gray-700 dark:text-gray-200">{currentPage}</span> of{" "}
+          <span className="font-semibold text-gray-700 dark:text-gray-200">{totalPages}</span>
         </p>
         <div className="flex items-center gap-1">
           <button
             type={buttonType}
             onClick={() => handleGoToPage(currentPage - 1)}
             disabled={currentPage <= 1}
-            className="p-1.5 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="p-1.5 rounded-md border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <FaChevronLeft size={12} />
           </button>
@@ -58,7 +58,7 @@ export default function Pagination({
             type={buttonType}
             onClick={() => handleGoToPage(currentPage + 1)}
             disabled={currentPage >= totalPages}
-            className="p-1.5 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="p-1.5 rounded-md border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <FaChevronRight size={12} />
           </button>
@@ -71,10 +71,10 @@ export default function Pagination({
     <div
       className={`flex flex-col sm:flex-row items-center justify-between ${containerClassName}`}
     >
-      <p className="text-sm text-gray-500 mb-3 sm:mb-0">
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-0">
         Showing page{" "}
-        <span className="font-semibold text-gray-700">{currentPage}</span> of{" "}
-        <span className="font-semibold text-gray-700">{totalPages}</span>
+        <span className="font-semibold text-gray-700 dark:text-gray-200">{currentPage}</span> of{" "}
+        <span className="font-semibold text-gray-700 dark:text-gray-200">{totalPages}</span>
         {typeof totalItems === "number" ? (
           <>
             {" "}
@@ -88,14 +88,14 @@ export default function Pagination({
           type={buttonType}
           onClick={() => handleGoToPage(currentPage - 1)}
           disabled={currentPage <= 1}
-          className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <FaChevronLeft size={14} />
         </button>
 
         {getVisiblePages(totalPages, currentPage).map((page, index) =>
           page === "..." ? (
-            <span key={`dots-${index}`} className="px-2 text-gray-400">
+            <span key={`dots-${index}`} className="px-2 text-gray-400 dark:text-gray-500">
               ...
             </span>
           ) : (
@@ -106,7 +106,7 @@ export default function Pagination({
               className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
                 currentPage === page
                   ? "bg-blue-600 text-white shadow-sm"
-                  : "text-gray-600 hover:bg-gray-100"
+                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
               }`}
             >
               {page}
@@ -118,7 +118,7 @@ export default function Pagination({
           type={buttonType}
           onClick={() => handleGoToPage(currentPage + 1)}
           disabled={currentPage >= totalPages}
-          className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <FaChevronRight size={14} />
         </button>
