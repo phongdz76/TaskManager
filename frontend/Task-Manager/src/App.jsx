@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -38,7 +38,29 @@ import UserProfile from "./pages/User/Profile";
 import PrivateRoute from "./routes/PrivateRoute";
 
 // Context
-import UserProvider from "./context/userContext";
+import UserProvider, { UserContext } from "./context/userContext";
+
+function StartupRedirect() {
+  const { user, loading } = useContext(UserContext);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
+        Loading...
+      </div>
+    );
+  }
+
+  if (user?.role === "admin") {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  if (user?.role === "user") {
+    return <Navigate to="/user/dashboard" replace />;
+  }
+
+  return <Navigate to="/login" replace />;
+}
 
 export default function App() {
   useEffect(() => {
@@ -57,7 +79,7 @@ export default function App() {
         <Router>
           <Routes>
             {/* Auth Routes */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<StartupRedirect />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -95,7 +117,7 @@ export default function App() {
               />
             </Route>
 
-            <Route path="*" element={<Navigate to="/login" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
       </div>

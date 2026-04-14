@@ -110,7 +110,7 @@ export const getAdmins = async (req, res) => {
   }
 };
 
-// @desc    Get user by ID (any authenticated user)
+// @desc    Get user by ID (admin or self)
 // @route   GET /api/users/:id
 // @access  Private
 export const getUserById = async (req, res) => {
@@ -118,6 +118,13 @@ export const getUserById = async (req, res) => {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
+
+    const isAdmin = req.user?.role === "admin";
+    const isSelf = req.user?._id?.toString() === req.params.id;
+    if (!isAdmin && !isSelf) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
     const user = await User.findById(req.params.id).select(
       "-password -googleId",
     );

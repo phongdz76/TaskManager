@@ -16,31 +16,33 @@ const PASSWORD_HELPER_TEXT =
   "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
 
 export default function Login() {
-  const { updateUser } = useContext(UserContext);
+  const { user, loading, updateUser } = useContext(UserContext);
   const [isLoading, setIsLoading] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [userRole, setUserRole] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
+  const [rememberMe, setRememberMe] = useState(() =>
+    Boolean(localStorage.getItem("rememberedEmail")),
+  );
+  const [formData, setFormData] = useState(() => ({
+    email: localStorage.getItem("rememberedEmail") || "",
     password: "",
-  });
+  }));
   const [errors, setErrors] = useState({});
 
   const navigate = useNavigate();
 
-  // Load saved credentials if available
   useEffect(() => {
-    const savedEmail = localStorage.getItem("rememberedEmail");
-    const savedPassword = localStorage.getItem("rememberedPassword");
-    if (savedEmail) {
-      setFormData((prev) => ({ ...prev, email: savedEmail }));
-      setRememberMe(true);
+    if (loading || isLoading || isRedirecting || !user) {
+      return;
     }
-    if (savedPassword) {
-      setFormData((prev) => ({ ...prev, password: savedPassword }));
+
+    if (user.role === "admin") {
+      navigate("/admin/dashboard", { replace: true });
+      return;
     }
-  }, []);
+
+    navigate("/user/dashboard", { replace: true });
+  }, [user, loading, isLoading, isRedirecting, navigate]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -76,12 +78,13 @@ export default function Login() {
 
       // Save credentials if Remember Me is checked
       if (rememberMe) {
-        localStorage.setItem("rememberedEmail", formData.email);
-        localStorage.setItem("rememberedPassword", formData.password);
+        localStorage.setItem("rememberedEmail", formData.email.trim());
       } else {
         localStorage.removeItem("rememberedEmail");
-        localStorage.removeItem("rememberedPassword");
       }
+
+      // Remove legacy plain-text password cache if present.
+      localStorage.removeItem("rememberedPassword");
 
       // Save token and user info
       const userData = {
@@ -204,7 +207,9 @@ export default function Login() {
 
               <div className="flex items-center gap-4 my-2">
                 <div className="flex-1 h-px bg-gray-300 dark:bg-slate-700"></div>
-                <span className="text-sm text-gray-500 dark:text-gray-400">OR</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  OR
+                </span>
                 <div className="flex-1 h-px bg-gray-300 dark:bg-slate-700"></div>
               </div>
 

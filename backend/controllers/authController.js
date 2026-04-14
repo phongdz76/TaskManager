@@ -105,7 +105,7 @@ export const registerUser = async (req, res) => {
       username: username.trim(),
       email,
       password: hashedPassword,
-      role: "user", // Self-registration always creates a regular user.
+      role: role,
     });
 
     res.status(201).json({
@@ -187,8 +187,9 @@ export const forgotPassword = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({
-        message: "No account found with this email address",
+      return res.status(200).json({
+        message:
+          "If that email is registered, a password reset link has been sent",
       });
     }
 
@@ -518,7 +519,8 @@ export const googleCallback = async (req, res) => {
       redirectParams.set("profileImageUrl", user.profileImageUrl);
     }
 
-    res.redirect(`${clientUrl}/oauth-callback?${redirectParams.toString()}`);
+    // Use URL fragment so token is not sent to servers in URL query logs.
+    res.redirect(`${clientUrl}/oauth-callback#${redirectParams.toString()}`);
   } catch (err) {
     res.redirect(`${clientUrl}/login?error=server_error`);
   }
