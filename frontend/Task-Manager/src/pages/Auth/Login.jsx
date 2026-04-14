@@ -201,7 +201,7 @@ export default function Login() {
 
               <Button
                 label={isLoading ? "Loading..." : "Login"}
-                onClick={handleSubmit}
+                type="submit"
                 disabled={isLoading}
               />
 
@@ -215,6 +215,7 @@ export default function Login() {
 
               <Button
                 label="Continue with Google"
+                type="button"
                 onClick={handleGoogleLogin}
                 outline
                 icon={AiOutlineGoogle}

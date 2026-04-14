@@ -196,18 +196,21 @@ export default function SignUp() {
 
               <Button
                 label={isLoading ? "Creating account..." : "Sign Up"}
-                onClick={handleSubmit}
+                type="submit"
                 disabled={isLoading}
               />
 
               <div className="flex items-center gap-4 my-2">
                 <div className="flex-1 h-px bg-gray-300 dark:bg-slate-700"></div>
-                <span className="text-sm text-gray-500 dark:text-gray-400">OR</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  OR
+                </span>
                 <div className="flex-1 h-px bg-gray-300 dark:bg-slate-700"></div>
               </div>
 
               <Button
                 label="Continue with Google"
+                type="button"
                 onClick={handleGoogleSignUp}
                 outline
                 icon={AiOutlineGoogle}

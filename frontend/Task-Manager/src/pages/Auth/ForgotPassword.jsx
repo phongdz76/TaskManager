@@ -190,7 +190,7 @@ export default function ForgotPassword() {
 
             <Button
               label={isLoading ? "Sending..." : "Send Reset Link"}
-              onClick={handleSubmit}
+              type="submit"
               disabled={isLoading}
             />
           </form>
