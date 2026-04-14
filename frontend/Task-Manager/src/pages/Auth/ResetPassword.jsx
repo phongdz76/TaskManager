@@ -134,7 +134,7 @@ export default function ResetPassword() {
 
             <Button
               label={isLoading ? "Resetting..." : "Reset Password"}
-              onClick={handleSubmit}
+              type="submit"
               disabled={isLoading}
             />
           </form>

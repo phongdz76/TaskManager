@@ -215,16 +215,58 @@ export default function ProfileEditor() {
       const token = response.data.token || localStorage.getItem("token");
       updateUser(updatedUser, token);
 
-      setFormData((prev) => ({
+      setFormData({
         ...buildInitialForm(updatedUser),
         currentPassword: "",
         newPassword: "",
-      }));
+      });
 
       setErrors({});
       toast.success("Profile updated successfully");
     } catch (error) {
-      toast.error(error.message || "Unable to update profile");
+      const apiMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Unable to update profile";
+
+      const normalizedMessage = apiMessage.toLowerCase();
+
+      if (normalizedMessage.includes("current password is incorrect")) {
+        setErrors((prev) => ({
+          ...prev,
+          currentPassword: "Current password is incorrect",
+        }));
+      } else if (normalizedMessage.includes("current password is required")) {
+        setErrors((prev) => ({
+          ...prev,
+          currentPassword: "Current password is required to set a new password",
+        }));
+      } else if (normalizedMessage.includes("email already in use")) {
+        setErrors((prev) => ({
+          ...prev,
+          email: "Email already in use",
+        }));
+      } else if (normalizedMessage.includes("invalid email format")) {
+        setErrors((prev) => ({
+          ...prev,
+          email: "Invalid email format",
+        }));
+      } else if (normalizedMessage.includes("username must be between")) {
+        setErrors((prev) => ({
+          ...prev,
+          username: apiMessage,
+        }));
+      } else if (
+        normalizedMessage.includes("password must be at least 8 characters")
+      ) {
+        setErrors((prev) => ({
+          ...prev,
+          newPassword: apiMessage,
+        }));
+      }
+
+      toast.error(apiMessage);
     } finally {
       setSaving(false);
     }

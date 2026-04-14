@@ -2,6 +2,7 @@ import React from "react";
 
 export default function Button({
   label,
+  type = "button",
   onClick,
   disabled,
   outline,
@@ -10,6 +11,7 @@ export default function Button({
 }) {
   return (
     <button
+      type={type}
       onClick={onClick}
       disabled={disabled}
       className={`
