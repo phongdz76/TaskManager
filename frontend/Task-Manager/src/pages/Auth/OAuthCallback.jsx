@@ -26,13 +26,19 @@ export default function OAuthCallback() {
     };
 
     const handleOAuthCallback = async () => {
-      const token = searchParams.get("token");
-      const name = searchParams.get("name");
-      const role = searchParams.get("role");
-      const email = searchParams.get("email");
-      const _id = searchParams.get("_id");
-      const profileImageUrl = searchParams.get("profileImageUrl");
-      const error = searchParams.get("error");
+      const hashString = window.location.hash.startsWith("#")
+        ? window.location.hash.slice(1)
+        : "";
+      const hashParams = new URLSearchParams(hashString);
+      const getParam = (key) => hashParams.get(key) || searchParams.get(key);
+
+      const token = getParam("token");
+      const name = getParam("name");
+      const role = getParam("role");
+      const email = getParam("email");
+      const _id = getParam("_id");
+      const profileImageUrl = getParam("profileImageUrl");
+      const error = getParam("error");
 
       if (error) {
         toast.error("Google login failed. Please try again.", {
@@ -53,6 +59,9 @@ export default function OAuthCallback() {
       if (isDisposed) {
         return;
       }
+
+      // Remove sensitive callback params from URL as soon as possible.
+      window.history.replaceState(null, "", window.location.pathname);
 
       updateUser(
         {
