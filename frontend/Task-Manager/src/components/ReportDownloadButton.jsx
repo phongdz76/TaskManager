@@ -24,7 +24,7 @@ export default function ReportDownloadButton({
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
-      
+
       toast.success(`${fileName} downloaded successfully`);
     } catch (error) {
       console.error("Download error:", error);
@@ -38,7 +38,7 @@ export default function ReportDownloadButton({
     <button
       onClick={handleDownload}
       disabled={downloading}
-      className="px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors shadow-sm flex items-center disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+      className="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 rounded-lg text-sm font-medium hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors shadow-sm flex items-center disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
     >
       {downloading ? (
         <FaSpinner className="mr-2 animate-spin" />

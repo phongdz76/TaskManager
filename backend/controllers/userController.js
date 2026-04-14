@@ -18,7 +18,7 @@ export const getAssignableUsers = async (req, res) => {
   }
 };
 
-// @desc    Get team members task summary (workspace-wide)
+// @desc    Get team members who share tasks with current user
 // @route   GET /api/users/team-members-summary
 // @access  Private
 export const getTeamMembersSummary = async (req, res) => {
@@ -202,7 +202,7 @@ export const deleteUser = async (req, res) => {
     await Task.deleteMany({ createdBy: user._id });
     await Task.updateMany(
       { assignedTo: user._id },
-      { $pull: { assignedTo: user._id } }
+      { $pull: { assignedTo: user._id } },
     );
     await User.findByIdAndDelete(req.params.id);
 

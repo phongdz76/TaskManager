@@ -26,7 +26,7 @@ export default function NotificationDropdown() {
     fetchNotifications();
     const interval = setInterval(() => {
       fetchNotifications();
-    }, 5000); // Poll every 5 seconds
+    }, 3000); // Poll every 3 seconds
 
     return () => clearInterval(interval);
   }, []);
@@ -97,10 +97,10 @@ export default function NotificationDropdown() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full hover:bg-gray-100 transition duration-200"
+        className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition duration-200"
         aria-label="Notifications"
       >
-        <FiBell className="text-2xl text-gray-700" />
+        <FiBell className="text-2xl text-gray-700 dark:text-gray-300" />
         {unreadCount > 0 && (
           <span className="absolute top-1 right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full border-2 border-white">
             {unreadCount > 99 ? "99+" : unreadCount}
@@ -109,14 +109,14 @@ export default function NotificationDropdown() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden flex flex-col max-h-[80vh]">
-          <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-            <h3 className="font-bold text-gray-800">Notifications</h3>
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 z-50 overflow-hidden flex flex-col max-h-[80vh]">
+          <div className="p-4 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900/50">
+            <h3 className="font-bold text-gray-800 dark:text-gray-100">Notifications</h3>
             <div className="flex items-center gap-3">
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllAsRead}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
                 >
                   Mark all as read
                 </button>
@@ -126,7 +126,7 @@ export default function NotificationDropdown() {
                 <button
                   onClick={openClearAllConfirmModal}
                   disabled={isClearingAll}
-                  className="text-xs text-red-600 hover:text-red-800 font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {isClearingAll ? "Clearing..." : "Clear all"}
                 </button>
@@ -136,7 +136,7 @@ export default function NotificationDropdown() {
 
           <div className="overflow-y-auto flex-1 p-2 space-y-1 custom-scrollbar">
             {notifications.length === 0 ? (
-              <div className="p-6 text-center text-gray-500 text-sm">
+              <div className="p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
                 You have no notifications.
               </div>
             ) : (
@@ -148,15 +148,15 @@ export default function NotificationDropdown() {
                   }
                   className={`p-3 rounded-md cursor-pointer transition-colors duration-150 ${
                     notification.isRead
-                      ? "bg-white hover:bg-gray-50"
-                      : "bg-blue-50/60 border-l-4 border-blue-500 hover:bg-blue-100/50"
+                      ? "bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700"
+                      : "bg-blue-50/60 dark:bg-blue-900/30 border-l-4 border-blue-500 hover:bg-blue-100/50 dark:hover:bg-blue-900/50"
                   }`}
                 >
                   <p
                     className={`text-sm ${
                       notification.isRead
-                        ? "text-gray-600"
-                        : "text-gray-900 font-medium"
+                        ? "text-gray-600 dark:text-gray-300"
+                        : "text-gray-900 dark:text-white font-medium"
                     }`}
                   >
                     {notification.message}
@@ -178,13 +178,13 @@ export default function NotificationDropdown() {
             onClick={closeClearAllConfirmModal}
           >
             <div
-              className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl transform transition-all"
+              className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-800 p-6 shadow-xl transform transition-all border dark:border-slate-700"
               onClick={(event) => event.stopPropagation()}
             >
-              <h3 className="text-xl font-bold mb-2 text-red-600">
+              <h3 className="text-xl font-bold mb-2 text-red-600 dark:text-red-500">
                 Delete All Notifications
               </h3>
-              <p className="mb-6 font-medium text-gray-600">
+              <p className="mb-6 font-medium text-gray-600 dark:text-gray-300">
                 Are you sure you want to delete all notifications? This action
                 cannot be undone.
               </p>
@@ -192,7 +192,7 @@ export default function NotificationDropdown() {
                 <button
                   onClick={closeClearAllConfirmModal}
                   disabled={isClearingAll}
-                  className="px-4 py-2 font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                  className="px-4 py-2 font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Cancel
                 </button>
@@ -206,7 +206,7 @@ export default function NotificationDropdown() {
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );

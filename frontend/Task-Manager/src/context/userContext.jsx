@@ -1,4 +1,10 @@
-import React, { createContext, useState, useEffect, useMemo } from "react";
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
 import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS } from "../utils/apiPaths";
 
@@ -8,20 +14,20 @@ export default function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const clearUser = () => {
+  const clearUser = useCallback(() => {
     setUser(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-  };
+  }, []);
 
-  const updateUser = (userData, token) => {
+  const updateUser = useCallback((userData, token) => {
     setUser(userData);
     if (token) {
       localStorage.setItem("token", token);
     }
     localStorage.setItem("user", JSON.stringify(userData));
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     const accessToken = localStorage.getItem("token");
@@ -43,11 +49,11 @@ export default function UserProvider({ children }) {
     };
 
     fetchUser();
-  }, []);
+  }, [clearUser]);
 
   const value = useMemo(
     () => ({ user, setUser, loading, clearUser, updateUser }),
-    [user, loading]
+    [user, loading, clearUser, updateUser],
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

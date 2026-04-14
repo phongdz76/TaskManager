@@ -60,7 +60,7 @@ export default function ForgotPassword() {
         <div className="w-full max-w-md lg:max-w-2xl xl:max-w-3xl mx-auto text-center">
           {/* Animated Email Icon */}
           <div className="relative mb-6">
-            <div className="w-24 h-24 mx-auto bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+            <div className="w-24 h-24 mx-auto bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center shadow-lg">
               <svg
                 className="w-12 h-12 text-white"
                 fill="none"
@@ -76,7 +76,7 @@ export default function ForgotPassword() {
               </svg>
             </div>
             {/* Success checkmark badge */}
-            <div className="absolute -bottom-1 -right-1 left-1/2 transform translate-x-4 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center border-4 border-white shadow-md">
+            <div className="absolute -bottom-1 -right-1 left-1/2 transform translate-x-4 w-8 h-8 bg-green-500 dark:bg-green-600 rounded-full flex items-center justify-center border-4 border-white dark:border-slate-800 shadow-md">
               <svg
                 className="w-4 h-4 text-white"
                 fill="none"
@@ -94,21 +94,23 @@ export default function ForgotPassword() {
           </div>
 
           {/* Title */}
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
             Check Your Email
           </h2>
-          <p className="text-gray-500 mb-4">
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
             We've sent a password reset link to
           </p>
 
           {/* Email display */}
-          <div className="bg-gray-50 rounded-lg py-3 px-4 mb-6 inline-block">
-            <span className="text-blue-600 font-semibold">{email}</span>
+          <div className="bg-gray-50 dark:bg-slate-800 rounded-lg py-3 px-4 mb-6 inline-block border border-gray-100 dark:border-slate-700">
+            <span className="text-blue-600 dark:text-blue-400 font-semibold">
+              {email}
+            </span>
           </div>
 
           {/* Instructions */}
-          <div className="bg-blue-50 rounded-xl p-4 mb-6 text-left">
-            <h4 className="text-sm font-semibold text-blue-800 mb-2 flex items-center gap-2">
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mb-6 text-left border border-blue-100 dark:border-blue-800/50">
+            <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
@@ -118,17 +120,23 @@ export default function ForgotPassword() {
               </svg>
               Next steps
             </h4>
-            <ul className="text-sm text-blue-700 space-y-1">
+            <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
               <li className="flex items-start gap-2">
-                <span className="text-blue-500 mt-0.5">1.</span>
+                <span className="text-blue-500 dark:text-blue-400 mt-0.5">
+                  1.
+                </span>
                 Open your email inbox
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-blue-500 mt-0.5">2.</span>
+                <span className="text-blue-500 dark:text-blue-400 mt-0.5">
+                  2.
+                </span>
                 Click the reset link in the email
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-blue-500 mt-0.5">3.</span>
+                <span className="text-blue-500 dark:text-blue-400 mt-0.5">
+                  3.
+                </span>
                 Create your new password
               </li>
             </ul>
@@ -137,18 +145,18 @@ export default function ForgotPassword() {
           {/* Back to login button */}
           <Link
             to="/login"
-            className="w-full flex justify-end items-center gap-2 text-sm text-gray-600 hover:text-blue-500 transition mb-3"
+            className="w-full flex justify-end items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition mb-3"
           >
             <AiOutlineArrowLeft />
             Back to Login
           </Link>
 
           {/* Resend section */}
-          <p className="text-sm text-gray-500 mt-2 mb-6">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-6">
             Didn't receive the email?{" "}
             <button
               onClick={() => setIsSubmitted(false)}
-              className="text-blue-600 hover:text-blue-700 font-semibold hover:underline transition-colors"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold hover:underline transition-colors"
             >
               Try again
             </button>{" "}
@@ -189,7 +197,7 @@ export default function ForgotPassword() {
 
           <Link
             to="/login"
-            className="flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-blue-500 transition"
+            className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition"
           >
             <AiOutlineArrowLeft />
             Back to Login

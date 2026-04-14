@@ -11,11 +11,34 @@ import PageContainer from "../common/PageContainer";
 import PageLoader from "../common/PageLoader";
 
 const StatItem = ({ label, value, valueClass }) => (
-  <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+  <div className="bg-gray-50 dark:bg-slate-900/50 rounded-lg px-3 py-2 border border-gray-100 dark:border-slate-700">
     <p className={`text-sm font-bold ${valueClass}`}>{value}</p>
-    <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{label}</p>
   </div>
 );
+
+const TeamMemberAvatar = ({ imageUrl, username }) => {
+  const [hasImageError, setHasImageError] = useState(false);
+  const normalizedImageUrl =
+    typeof imageUrl === "string" ? imageUrl.trim() : "";
+
+  if (!normalizedImageUrl || hasImageError) {
+    return (
+      <div className="w-12 h-12 rounded-full border border-gray-200 dark:border-slate-700 bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
+        <FaUser className="text-gray-500 dark:text-gray-400" size={18} />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={normalizedImageUrl}
+      alt={username || "User"}
+      className="w-12 h-12 rounded-full object-cover border border-gray-200 dark:border-slate-700"
+      onError={() => setHasImageError(true)}
+    />
+  );
+};
 
 const PAGE_LIMIT = 10;
 
@@ -93,8 +116,8 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
       <PageContainer>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Team Members</h1>
-            <p className="mt-2 text-gray-500">{subtitle}</p>
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Team Members</h1>
+            <p className="mt-2 text-gray-500 dark:text-gray-400">{subtitle}</p>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -106,7 +129,7 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
             <button
               onClick={fetchMembers}
               disabled={loading}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm flex items-center disabled:opacity-60"
+              className="px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 transition-colors shadow-sm flex items-center disabled:opacity-60"
             >
               <FaSpinner className={`mr-2 ${loading ? "animate-spin" : ""}`} />
               Refresh
@@ -114,14 +137,14 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 mb-6">
+        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700 mb-6">
           <div className="relative w-full sm:w-96">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <FaSearch className="text-gray-400" size={14} />
             </div>
             <input
               type="text"
-              className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-slate-600 dark:bg-slate-900/50 dark:text-white rounded-lg text-sm flex-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
               placeholder="Search team members..."
               value={searchQuery}
               onChange={(e) => {
@@ -140,33 +163,26 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
               {paginatedMembers.map((member) => (
                 <div
                   key={member._id}
-                  className="bg-white rounded-2xl p-5 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
+                  className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    {member.profileImageUrl ? (
-                      <img
-                        src={member.profileImageUrl}
-                        alt={member.username}
-                        className="w-12 h-12 rounded-full object-cover border border-gray-200"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full border border-gray-200 bg-gray-100 flex items-center justify-center">
-                        <FaUser className="text-gray-500" size={18} />
-                      </div>
-                    )}
+                    <TeamMemberAvatar
+                      imageUrl={member.profileImageUrl}
+                      username={member.username}
+                    />
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-gray-900 truncate">
+                        <h3 className="font-semibold text-gray-900 dark:text-white truncate">
                           {member.username}
                         </h3>
                         {member.role === "admin" && (
-                          <span className="text-[10px] font-medium text-white bg-blue-600 px-2 py-0.5 rounded">
+                          <span className="text-[10px] font-medium text-white bg-blue-600 dark:bg-blue-500 px-2 py-0.5 rounded">
                             Admin
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500 truncate">
+                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                         {member.email}
                       </p>
                     </div>
@@ -174,14 +190,14 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
 
                   <div className="grid grid-cols-2 gap-2">
                     <StatItem
-                      label="Task Count"
+                      label="Shared Tasks"
                       value={member.taskCount || 0}
-                      valueClass="text-indigo-600"
+                      valueClass="text-indigo-600 dark:text-indigo-400"
                     />
                     <StatItem
                       label="Completion Level"
                       value={`${member.completionLevel || 0}%`}
-                      valueClass="text-emerald-600"
+                      valueClass="text-emerald-600 dark:text-emerald-400"
                     />
                   </div>
                 </div>
@@ -195,12 +211,12 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
                 totalItems={filteredMembers.length}
                 itemLabel="members"
                 onPageChange={handlePageChange}
-                containerClassName="mt-6 pt-4 border-t border-gray-100"
+                containerClassName="mt-6 pt-4 border-t border-gray-100 dark:border-slate-700"
               />
             )}
           </>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-100 p-10 text-center text-gray-500">
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-10 text-center text-gray-500 dark:text-gray-400">
             No team members found.
           </div>
         )}

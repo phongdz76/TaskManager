@@ -234,7 +234,7 @@ export default function ProfileEditor() {
 
   if (showProfileLoader) {
     return (
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
         <PageLoader message="Loading profile..." />
       </div>
     );
@@ -245,23 +245,23 @@ export default function ProfileEditor() {
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
       <div className="flex flex-col gap-6">
         <div className="w-full flex flex-col items-center gap-3">
           {imageUrl && !imageLoadError ? (
             <img
               src={imageUrl}
               alt="Profile Avatar"
-              className="w-32 h-32 rounded-full object-cover border border-gray-200"
+              className="w-32 h-32 rounded-full object-cover border border-gray-200 dark:border-slate-700"
               onError={() => setImageLoadError(true)}
             />
           ) : (
-            <div className="w-32 h-32 rounded-full border border-gray-200 bg-gray-100 flex items-center justify-center">
-              <FaUser className="text-5xl text-gray-500" />
+            <div className="w-32 h-32 rounded-full border border-gray-200 dark:border-slate-700 bg-gray-100 dark:bg-slate-900/50 flex items-center justify-center">
+              <FaUser className="text-5xl text-gray-500 dark:text-gray-400" />
             </div>
           )}
 
-          <label className="cursor-pointer text-sm text-blue-600 hover:text-blue-700 font-medium">
+          <label className="cursor-pointer text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
             {uploadingImage ? "Uploading image..." : "Change avatar"}
             <input
               type="file"
@@ -302,7 +302,7 @@ export default function ProfileEditor() {
           />
 
           {isGoogleOnlyAccount && (
-            <p className="text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+            <p className="text-sm text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg px-3 py-2">
               This account uses Google Sign-In. You can set a password now to
               also log in with email/password. Current password is not required.
             </p>
@@ -349,7 +349,7 @@ export default function ProfileEditor() {
               type="button"
               disabled={saving || uploadingImage}
               onClick={handleReset}
-              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Reset
             </button>

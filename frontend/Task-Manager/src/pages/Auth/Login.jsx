@@ -182,7 +182,7 @@ export default function Login() {
                   />
                   <label
                     htmlFor="rememberMe"
-                    className="text-sm text-gray-600 select-none cursor-pointer"
+                    className="text-sm text-gray-600 dark:text-gray-400 select-none cursor-pointer"
                   >
                     Remember me
                   </label>
@@ -190,7 +190,7 @@ export default function Login() {
 
                 <Link
                   to="/forgot-password"
-                  className="text-sm text-gray-600 hover:text-blue-500 hover:underline transition"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:underline transition"
                 >
                   Forgot password?
                 </Link>
@@ -203,9 +203,9 @@ export default function Login() {
               />
 
               <div className="flex items-center gap-4 my-2">
-                <div className="flex-1 h-px bg-gray-300"></div>
-                <span className="text-sm text-gray-500">OR</span>
-                <div className="flex-1 h-px bg-gray-300"></div>
+                <div className="flex-1 h-px bg-gray-300 dark:bg-slate-700"></div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">OR</span>
+                <div className="flex-1 h-px bg-gray-300 dark:bg-slate-700"></div>
               </div>
 
               <Button
@@ -217,11 +217,11 @@ export default function Login() {
               />
             </form>
 
-            <p className="text-center text-sm text-gray-600">
+            <p className="text-center text-sm text-gray-600 dark:text-gray-400">
               Don't have an account?
               <Link
                 to="/register"
-                className="text-blue-500 hover:underline ml-2 font-medium"
+                className="text-blue-500 dark:text-blue-400 hover:underline ml-2 font-medium"
               >
                 Sign Up
               </Link>

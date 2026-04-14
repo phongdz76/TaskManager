@@ -20,15 +20,15 @@ import { API_PATHS } from "../../utils/apiPaths";
 import PageContainer from "../common/PageContainer";
 
 const STATUS_STYLES = {
-  Pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  "In-Progress": "bg-blue-50 text-blue-700 border-blue-200",
-  Completed: "bg-green-50 text-green-700 border-green-200",
+  Pending: "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-500 border-yellow-200 dark:border-yellow-700/50",
+  "In-Progress": "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700/50",
+  Completed: "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700/50",
 };
 
 const PRIORITY_STYLES = {
-  Low: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  Medium: "bg-orange-50 text-orange-700 border-orange-200",
-  High: "bg-red-50 text-red-700 border-red-200",
+  Low: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700/50",
+  Medium: "bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-700/50",
+  High: "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-700/50",
 };
 
 const normalizeChecklist = (checklist) => {
@@ -235,14 +235,14 @@ export default function TaskDetailsPage({
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(backPath)}
-              className="p-3 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors shrink-0"
+              className="p-3 text-gray-500 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/50 rounded-xl transition-colors shrink-0"
               title="Back"
             >
               <FaArrowLeft size={20} />
             </button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Task Details</h1>
-              <p className="mt-2 text-gray-500">
+              <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Task Details</h1>
+              <p className="mt-2 text-gray-500 dark:text-gray-400">
                 View full task info and manage checklist progress.
               </p>
             </div>
@@ -251,7 +251,7 @@ export default function TaskDetailsPage({
           <button
             onClick={fetchTaskDetails}
             disabled={loading}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm flex items-center disabled:opacity-60"
+            className="px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 transition-colors shadow-sm flex items-center disabled:opacity-60"
           >
             <FaSpinner className={`mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -261,13 +261,13 @@ export default function TaskDetailsPage({
         {loading ? (
           <div className="min-h-[40vh] flex flex-col items-center justify-center">
             <FaSpinner className="animate-spin text-blue-500" size={32} />
-            <p className="mt-3 text-gray-500 font-medium">
+            <p className="mt-3 text-gray-500 dark:text-gray-400 font-medium">
               Loading task details...
             </p>
           </div>
         ) : !task ? (
-          <div className="bg-white border border-gray-100 rounded-2xl p-8 text-center shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
-            <p className="text-gray-600 font-medium">
+          <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl p-8 text-center shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
+            <p className="text-gray-600 dark:text-gray-300 font-medium">
               Task not found or you do not have access.
             </p>
             <button
@@ -280,9 +280,9 @@ export default function TaskDetailsPage({
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <FaTasks className="text-blue-600" />
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                  <FaTasks className="text-blue-600 dark:text-blue-400" />
                   Task Information
                 </h3>
 
@@ -291,7 +291,7 @@ export default function TaskDetailsPage({
                     <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold">
                       Title
                     </p>
-                    <p className="text-lg font-semibold text-gray-800 mt-1">
+                    <p className="text-lg font-semibold text-gray-800 dark:text-gray-100 mt-1">
                       {task.title || "Untitled task"}
                     </p>
                   </div>
@@ -300,7 +300,7 @@ export default function TaskDetailsPage({
                     <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold">
                       Description
                     </p>
-                    <p className="text-gray-700 mt-1 whitespace-pre-wrap">
+                    <p className="text-gray-700 dark:text-gray-300 mt-1 whitespace-pre-wrap">
                       {task.description || "No description provided."}
                     </p>
                   </div>
@@ -314,7 +314,7 @@ export default function TaskDetailsPage({
                         {attachmentLinks.map((attachment, index) => (
                           <div
                             key={`${attachment.raw}-${index}`}
-                            className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2"
+                            className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 px-3 py-2"
                           >
                             <div className="min-w-0 flex items-center gap-2">
                               <FaPaperclip className="text-indigo-500 shrink-0" />
@@ -330,7 +330,7 @@ export default function TaskDetailsPage({
                                 </a>
                               ) : (
                                 <span
-                                  className="text-sm text-gray-700 truncate"
+                                  className="text-sm text-gray-700 dark:text-gray-300 truncate"
                                   title={attachment.raw}
                                 >
                                   {attachment.raw}
@@ -352,9 +352,9 @@ export default function TaskDetailsPage({
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <FaListUl className="text-indigo-600" />
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                  <FaListUl className="text-indigo-600 dark:text-indigo-400" />
                   Checklist
                 </h3>
 
@@ -364,16 +364,16 @@ export default function TaskDetailsPage({
                       {checklistDraft.map((item, index) => (
                         <label
                           key={`${item.text}-${index}`}
-                          className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:border-blue-100 hover:bg-blue-50/40 transition-colors cursor-pointer"
+                          className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 dark:border-slate-700 hover:border-blue-100 dark:hover:border-blue-900/50 hover:bg-blue-50/40 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
                         >
                           <input
                             type="checkbox"
                             checked={item.completed}
                             onChange={() => handleToggleChecklistItem(index)}
-                            className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="mt-1 h-4 w-4 rounded border-gray-300 dark:border-slate-600 dark:bg-slate-800 text-blue-600 focus:ring-blue-500"
                           />
                           <span
-                            className={`text-sm ${item.completed ? "text-gray-500 line-through" : "text-gray-800"}`}
+                            className={`text-sm ${item.completed ? "text-gray-500 dark:text-gray-400 line-through" : "text-gray-800 dark:text-gray-100"}`}
                           >
                             {item.text}
                           </span>
@@ -412,8 +412,8 @@ export default function TaskDetailsPage({
             </div>
 
             <div className="space-y-6">
-              <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-800 mb-4">
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">
                   Task Status
                 </h3>
 
@@ -426,7 +426,7 @@ export default function TaskDetailsPage({
                       value={task.status || "Pending"}
                       onChange={(e) => handleUpdateStatus(e.target.value)}
                       disabled={updatingStatus}
-                      className={`w-full appearance-none cursor-pointer px-3 py-2.5 rounded-lg text-sm font-medium border outline-none transition-colors ${STATUS_STYLES[task.status] || "bg-gray-50 text-gray-700 border-gray-200"}`}
+                      className={`w-full appearance-none cursor-pointer px-3 py-2.5 rounded-lg text-sm font-medium border outline-none transition-colors ${STATUS_STYLES[task.status] || "bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-slate-700"}`}
                     >
                       <option value="Pending">Pending</option>
                       <option value="In-Progress">In Progress</option>
@@ -439,7 +439,7 @@ export default function TaskDetailsPage({
                       Priority
                     </p>
                     <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${PRIORITY_STYLES[task.priority] || "bg-gray-50 text-gray-700 border-gray-200"}`}
+                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${PRIORITY_STYLES[task.priority] || "bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-slate-700"}`}
                     >
                       {task.priority || "Medium"}
                     </span>
@@ -449,7 +449,7 @@ export default function TaskDetailsPage({
                     <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-2">
                       Progress
                     </p>
-                    <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                    <div className="h-2 rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden">
                       <div
                         className="h-full rounded-full bg-blue-500"
                         style={{ width: `${checklistProgress.progress}%` }}
@@ -462,12 +462,12 @@ export default function TaskDetailsPage({
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-800 mb-4">
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-slate-700">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">
                   Timeline & People
                 </h3>
 
-                <div className="space-y-4 text-sm text-gray-700">
+                <div className="space-y-4 text-sm text-gray-700 dark:text-gray-300">
                   <div className="flex items-center gap-3">
                     <FaCalendarAlt className="text-blue-500" />
                     <div>
@@ -516,14 +516,14 @@ export default function TaskDetailsPage({
                                   <img
                                     src={assignee.profileImageUrl}
                                     alt={name}
-                                    className="w-7 h-7 rounded-full object-cover border border-gray-200"
+                                    className="w-7 h-7 rounded-full object-cover border border-gray-200 dark:border-slate-700"
                                   />
                                 ) : (
                                   <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
                                     {name.charAt(0).toUpperCase()}
                                   </div>
                                 )}
-                                <span className="text-sm text-gray-700 truncate">
+                                <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
                                   {name}
                                 </span>
                               </div>
