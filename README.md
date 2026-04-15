@@ -1,57 +1,96 @@
 # Task Manager Monorepo
 
-Task Manager is a full-stack app for authentication, task management, notifications, and reporting.
+Task Manager la du an full-stack quan ly cong viec, gom backend API (Express + MongoDB) va frontend (React + Vite).
 
-## Main Features
+## 1. Tong quan tinh nang
 
-- Email/password auth + Google OAuth
-- Forgot/reset password by email (token expiry: 15 minutes)
-- Role-based app flow (`admin`, `user`)
-- Task CRUD with:
-  - checklist-based progress auto-sync
-  - status update endpoint
-  - pin/unpin task
-  - overdue filtering
-- In-app notifications (polling on frontend)
-- Excel exports for tasks, users, and team summary
+- Dang ky, dang nhap email/password
+- Dang nhap Google OAuth
+- Quen mat khau / dat lai mat khau qua email
+- Phan quyen theo role admin va user
+- Quan ly task: tao, sua, xoa, xem chi tiet
+- Cap nhat status task, checklist va pin/unpin task
+- Thong ke dashboard + bieu do
+- Notification trong he thong
+- Xuat bao cao Excel
 
-## Project Layout
+## 2. Cau truc du an
 
-```
+```text
 TaskManager/
-|-- backend/                     # Node.js + Express + MongoDB API
-`-- frontend/
-    `-- Task-Manager/            # React + Vite client app
+├── backend/
+│   ├── server.js
+│   ├── config/
+│   ├── controllers/
+│   ├── middlewares/
+│   ├── models/
+│   ├── routes/
+│   └── utils/
+└── frontend/
+    └── Task-Manager/
+        ├── src/
+        ├── public/
+        └── vite.config.js
 ```
 
-## Quick File Map
+## 3. File nam o dau (map nhanh)
 
-- `backend/server.js`: app bootstrap, CORS, JSON middleware, route mounting
-- `backend/routes/`: route definitions by module (`auth`, `users`, `tasks`, `reports`, `notifications`)
-- `backend/controllers/`: request validation + business logic
-- `backend/models/`: Mongoose schemas (`User`, `Task`, `Notification`)
-- `backend/utils/teamMembersSummary.js`: shared team statistics logic
-- `frontend/Task-Manager/src/App.jsx`: routing tree for auth/admin/user pages
-- `frontend/Task-Manager/src/context/userContext.jsx`: auth state bootstrap and storage sync
-- `frontend/Task-Manager/src/utils/apiPaths.js`: centralized API endpoints
-- `frontend/Task-Manager/src/components/layouts/NotificationDropdown.jsx`: notification UI + polling actions
+### 3.1 Backend
 
-## Tech Stack
+- backend/server.js: khoi tao Express app, middleware, mount routes
+- backend/config/db.js: ket noi MongoDB
+- backend/config/cloudinary.js: cau hinh Cloudinary
+- backend/config/mailer.js: cau hinh gui email
+- backend/routes/authRoutes.js: route xac thuc
+- backend/routes/userRoutes.js: route nguoi dung
+- backend/routes/taskRoutes.js: route task
+- backend/routes/reportRoutes.js: route report
+- backend/routes/notificationRoutes.js: route notification
+- backend/models/User.js: schema user
+- backend/models/Task.js: schema task
+- backend/models/Notification.js: schema notification
 
-- Backend: Node.js, Express 5, MongoDB (Mongoose), JWT, Nodemailer, Multer, Cloudinary, ExcelJS
+### 3.2 Backend controllers (phan ban muon doc)
+
+- backend/controllers/authController.js:
+  - register, login, forgot/reset password, profile, Google OAuth callback
+- backend/controllers/userController.js:
+  - lay danh sach user, cap nhat role, xoa user, profile user
+- backend/controllers/taskController.js:
+  - CRUD task, update status, update checklist, dashboard data, pin task
+- backend/controllers/reportController.js:
+  - xuat report Excel cho task/user/team
+- backend/controllers/notificationController.js:
+  - lay notification, mark read, clear notification
+
+### 3.3 Frontend src
+
+- frontend/Task-Manager/src/App.jsx: route tong va phan luong theo role
+- frontend/Task-Manager/src/context/userContext.jsx: luu user state + token
+- frontend/Task-Manager/src/routes/PrivateRoute.jsx: chan route theo role
+- frontend/Task-Manager/src/utils/apiPaths.js: map endpoint API
+- frontend/Task-Manager/src/utils/axiosInstance.js: axios instance + interceptor
+- frontend/Task-Manager/src/pages/Admin/*: man hinh admin
+- frontend/Task-Manager/src/pages/User/*: man hinh user
+- frontend/Task-Manager/src/pages/Auth/*: dang nhap/dang ky/quen mat khau
+- frontend/Task-Manager/src/components/tasks/*: cac component task dung chung
+
+## 4. Cong nghe su dung
+
+- Backend: Node.js, Express 5, MongoDB, Mongoose, JWT, Nodemailer, Cloudinary, Multer, ExcelJS
 - Frontend: React 19, Vite 7, React Router, Axios, Tailwind CSS, Recharts
 
-## Prerequisites
+## 5. Yeu cau moi truong
 
-- Node.js 18+
-- npm 9+
-- MongoDB connection string
-- Cloudinary account (image upload)
-- Gmail SMTP App Password (forgot/reset password)
+- Node.js >= 18
+- npm >= 9
+- MongoDB URI
+- Cloudinary account
+- Gmail App Password
 
-## Environment Variables
+## 6. Bien moi truong
 
-Create `backend/.env`:
+Tao file backend/.env:
 
 ```env
 PORT=8000
@@ -71,21 +110,18 @@ CLOUDINARY_API_SECRET=your_api_secret
 EMAIL_USER=your_email
 EMAIL_PASS=your_app_password
 
-# Optional: currently registration still creates role=user
 ADMIN_INVITE_TOKEN=optional_value
 ```
 
-Create `frontend/Task-Manager/.env` (optional):
+Tao file frontend/Task-Manager/.env:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-If not set, frontend defaults to `http://localhost:8000`.
+## 7. Chay local
 
-## Run Locally
-
-### 1) Backend
+### 7.1 Backend
 
 ```bash
 cd backend
@@ -93,7 +129,7 @@ npm install
 npm run dev
 ```
 
-### 2) Frontend
+### 7.2 Frontend
 
 ```bash
 cd frontend/Task-Manager
@@ -101,46 +137,48 @@ npm install
 npm run dev
 ```
 
-## API Mount Points
+## 8. API mount points
 
-- `/api/auth`
-- `/api/users`
-- `/api/tasks`
-- `/api/reports`
-- `/api/notifications`
+- /api/auth
+- /api/users
+- /api/tasks
+- /api/reports
+- /api/notifications
 
-## Commit Convention
+## 9. Commit convention (Conventional Commits)
 
-Su dung chuan Conventional Commits:
+Su dung dung format sau:
 
-```
+```text
 <type>(<scope>): <mo ta ngan gon>
 ```
 
-- `type`:
-  - `feat`: them tinh nang
-  - `fix`: sua bug
-  - `chore`: thay doi lat vat (build, config, tool)
-  - `refactor`: cai thien code khong doi logic
-  - `docs`: thay doi document
-  - `test`: them hoac chinh sua test
+Type hop le:
+
+- feat: them tinh nang
+- fix: sua bug
+- chore: thay doi lat vat (build, config, tool)
+- refactor: cai thien code khong doi logic
+- docs: thay doi document
+- test: them hoac chinh sua test
 
 Vi du:
 
-- `feat(auth): add JWT authentication middleware`
-- `fix(order): correct total calculation rounding issue`
-- `chore(ci): add GitHub Actions workflow for tests`
+- feat(auth): add JWT authentication middleware
+- fix(order): correct total calculation rounding issue
+- chore(ci): add GitHub Actions workflow for tests
 
-## Push Branch dev
+## 10. Quy trinh push len nhanh dev
 
 ```bash
 git checkout dev
+git pull origin dev
 git add .
-git commit -m "docs(readme): update readme to match current backend frontend logic"
+git commit -m "fix(tasks): keep back navigation source and allow dashboard status update"
 git push origin dev
 ```
 
-## Security Notes
+## 11. Bao mat
 
-- Keep all secrets in `.env`
-- Never commit real credentials or tokens
+- Khong commit file .env
+- Khong day key/secret/token that len repo
