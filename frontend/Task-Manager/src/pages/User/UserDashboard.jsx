@@ -1,10 +1,11 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/userContext";
 import useUserAuth from "../../hooks/useUserAuth";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
+import toast from "react-hot-toast";
 import {
   FaTasks,
   FaClock,
@@ -46,6 +47,15 @@ const SummaryCard = ({ title, value, icon, bgColor, textColor }) => (
 
 const PAGE_LIMIT = 10;
 
+const STATUS_STYLES = {
+  Pending:
+    "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-500 border-yellow-200 dark:border-yellow-700/50",
+  "In-Progress":
+    "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700/50",
+  Completed:
+    "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700/50",
+};
+
 export default function UserDashboard() {
   useUserAuth();
 
@@ -58,68 +68,104 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState(null);
+  const [updatingTaskId, setUpdatingTaskId] = useState("");
 
-  const getDashboardData = async (page = currentPage) => {
-    setLoading(true);
-    try {
-      const response = await axiosInstance.get(
-        `${API_PATHS.TASKS.USER_DASHBOARD_DATA}?page=${page}&limit=${PAGE_LIMIT}`,
-      );
-      const data = response.data;
-      setDashboardData(data);
-      setPagination(data.pagination || null);
+  const getDashboardData = useCallback(
+    async (page = currentPage, options = {}) => {
+      const { silent = false } = options;
 
-      if (data.statistics) {
-        setPieChartData(
-          [
+      if (!silent) {
+        setLoading(true);
+      }
+
+      try {
+        const response = await axiosInstance.get(
+          `${API_PATHS.TASKS.USER_DASHBOARD_DATA}?page=${page}&limit=${PAGE_LIMIT}`,
+        );
+        const data = response.data;
+        setDashboardData(data);
+        setPagination(data.pagination || null);
+
+        if (data.statistics) {
+          setPieChartData(
+            [
+              {
+                name: "Pending",
+                value: data.statistics.pendingTasks || 0,
+                color: "#f59e0b",
+              },
+              {
+                name: "In Progress",
+                value: data.statistics.inProgressTasks || 0,
+                color: "#3b82f6",
+              },
+              {
+                name: "Completed",
+                value: data.statistics.completedTasks || 0,
+                color: "#10b981",
+              },
+            ].filter((item) => item.value > 0),
+          );
+        }
+
+        if (data.charts?.taskPriorityLevels) {
+          setBarChartData([
             {
-              name: "Pending",
-              value: data.statistics.pendingTasks || 0,
+              name: "Low",
+              value: data.charts.taskPriorityLevels["Low"] || 0,
+              color: "#10b981",
+            },
+            {
+              name: "Medium",
+              value: data.charts.taskPriorityLevels["Medium"] || 0,
               color: "#f59e0b",
             },
             {
-              name: "In Progress",
-              value: data.statistics.inProgressTasks || 0,
-              color: "#3b82f6",
+              name: "High",
+              value: data.charts.taskPriorityLevels["High"] || 0,
+              color: "#ef4444",
             },
-            {
-              name: "Completed",
-              value: data.statistics.completedTasks || 0,
-              color: "#10b981",
-            },
-          ].filter((item) => item.value > 0),
-        );
+          ]);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        if (!silent) {
+          setLoading(false);
+        }
       }
+    },
+    [currentPage],
+  );
 
-      if (data.charts?.taskPriorityLevels) {
-        setBarChartData([
-          {
-            name: "Low",
-            value: data.charts.taskPriorityLevels["Low"] || 0,
-            color: "#10b981",
-          },
-          {
-            name: "Medium",
-            value: data.charts.taskPriorityLevels["Medium"] || 0,
-            color: "#f59e0b",
-          },
-          {
-            name: "High",
-            value: data.charts.taskPriorityLevels["High"] || 0,
-            color: "#ef4444",
-          },
-        ]);
-      }
+  const handleUpdateTaskStatus = async (taskId, newStatus) => {
+    const selectedTask = dashboardData?.recentTasks?.find(
+      (task) => task._id === taskId,
+    );
+
+    if (!selectedTask || selectedTask.status === newStatus) {
+      return;
+    }
+
+    setUpdatingTaskId(taskId);
+
+    try {
+      await axiosInstance.put(API_PATHS.TASKS.UPDATE_STATUS(taskId), {
+        status: newStatus,
+      });
+
+      toast.success(`Status changed to ${newStatus}`);
+      await getDashboardData(currentPage, { silent: true });
     } catch (error) {
-      console.error("Error fetching dashboard data:", error);
+      toast.error(error?.response?.data?.message || "Failed to update status");
     } finally {
-      setLoading(false);
+      setUpdatingTaskId("");
     }
   };
 
   useEffect(() => {
     getDashboardData(currentPage);
-  }, [currentPage]);
+  }, [currentPage, getDashboardData]);
 
   const handlePageChange = (newPage) => {
     if (newPage < 1 || (pagination && newPage > pagination.totalPages)) return;
@@ -371,19 +417,25 @@ export default function UserDashboard() {
                             </p>
                           </td>
                           <td className="py-4 px-4 align-top">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
-                                task.status === "Pending"
-                                  ? "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-500 border-yellow-200 dark:border-yellow-700/50"
-                                  : task.status === "In-Progress"
-                                    ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700/50"
-                                    : "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700/50"
+                            <select
+                              value={task.status}
+                              onChange={(e) =>
+                                handleUpdateTaskStatus(task._id, e.target.value)
+                              }
+                              disabled={updatingTaskId === task._id}
+                              className={`appearance-none px-2.5 py-1 rounded-full text-xs font-medium border outline-none transition-colors ${
+                                STATUS_STYLES[task.status] ||
+                                "bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-slate-700"
+                              } ${
+                                updatingTaskId === task._id
+                                  ? "cursor-wait opacity-70"
+                                  : "cursor-pointer"
                               }`}
                             >
-                              {task.status === "In-Progress"
-                                ? "In Progress"
-                                : task.status}
-                            </span>
+                              <option value="Pending">Pending</option>
+                              <option value="In-Progress">In Progress</option>
+                              <option value="Completed">Completed</option>
+                            </select>
                           </td>
                           <td className="py-4 px-4 align-top">
                             <span

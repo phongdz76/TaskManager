@@ -396,9 +396,15 @@ export default function ManagerAllTasks() {
                 onStatusChange={updateTaskStatus}
                 onTogglePinTask={togglePinTask}
                 onViewTask={(task) =>
-                  navigate(`/admin/task-details/${task._id}`)
+                  navigate(
+                    `/admin/task-details/${task._id}?source=all-user-tasks`,
+                  )
                 }
-                onEditTask={(task) => navigate(`/admin/tasks/edit/${task._id}`)}
+                onEditTask={(task) =>
+                  navigate(
+                    `/admin/tasks/edit/${task._id}?source=all-user-tasks`,
+                  )
+                }
                 onDeleteTask={(task) => openConfirmModal(task._id, task.title)}
                 canEditTask={(task) =>
                   !adminUserIds.includes(task?.createdBy?._id)
