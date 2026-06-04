@@ -32,7 +32,25 @@ export default function NavBar({ activeMenu }) {
     }
   }, [isDarkMode]);
 
+  const [isVietnamese, setIsVietnamese] = useState(() => {
+    if (typeof window !== "undefined") {
+      return document.cookie.includes("googtrans=/en/vi");
+    }
+    return false;
+  });
+
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
+
+  const toggleLanguage = () => {
+    if (isVietnamese) {
+      document.cookie = "googtrans=/en/en; path=/";
+      document.cookie = "googtrans=/en/en; domain=" + window.location.hostname + "; path=/";
+    } else {
+      document.cookie = "googtrans=/en/vi; path=/";
+      document.cookie = "googtrans=/en/vi; domain=" + window.location.hostname + "; path=/";
+    }
+    window.location.reload();
+  };
 
   const handleGoDashboard = () => {
     if (user?.role === "admin") {
@@ -76,6 +94,16 @@ export default function NavBar({ activeMenu }) {
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Language Toggle Button */}
+        <button
+          onClick={toggleLanguage}
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-100 dark:bg-slate-700 text-blue-600 dark:text-blue-400 font-bold text-xs hover:bg-blue-200 dark:hover:bg-slate-600 transition-colors"
+          aria-label="Toggle Language"
+        >
+          {isVietnamese ? "VN" : "EN"}
+        </button>
+
+        {/* Dark Mode Toggle */}
         <button
           onClick={toggleDarkMode}
           className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"

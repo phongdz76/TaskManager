@@ -40,10 +40,8 @@ export default function Pagination({
       <div
         className={`flex items-center justify-between ${containerClassName}`}
       >
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          Page{" "}
-          <span className="font-semibold text-gray-700 dark:text-gray-200">{currentPage}</span> of{" "}
-          <span className="font-semibold text-gray-700 dark:text-gray-200">{totalPages}</span>
+        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium translate-no notranslate">
+          <span className="font-bold text-gray-700 dark:text-gray-200">{currentPage}</span> / {totalPages}
         </p>
         <div className="flex items-center gap-1">
           <button

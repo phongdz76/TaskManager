@@ -23,3 +23,32 @@
     @apply bg-slate-900 text-slate-100;
   }
 }
+
+/* Hide Google Translate Widget & Banner */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-banner-frame,
+#google_translate_element {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Prevent Google Translate from pushing body/html down */
+html {
+    top: 0px !important;
+    position: static !important;
+}
+body {
+    top: 0px !important;
+    position: static !important;
+}
+
+/* Hide the tooltip that shows original text on hover */
+#goog-gt-tt, .goog-te-balloon-frame {
+    display: none !important;
+}
+
+/* Remove the highlight background on translated text */
+.goog-text-highlight {
+    background: none !important;
+    box-shadow: none !important;
+}
