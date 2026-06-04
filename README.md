@@ -13,6 +13,7 @@ Task Manager la du an full-stack quan ly cong viec, gom backend API (Express + M
 - Thong ke dashboard + bieu do
 - Notification trong he thong
 - Xuat bao cao Excel
+- Upload file/anh dinh kem cho task
 
 ## 2. Cau truc du an
 
@@ -46,6 +47,7 @@ TaskManager/
 - backend/routes/taskRoutes.js: route task
 - backend/routes/reportRoutes.js: route report
 - backend/routes/notificationRoutes.js: route notification
+- backend/routes/uploadRoutes.js: route upload file/anh
 - backend/models/User.js: schema user
 - backend/models/Task.js: schema task
 - backend/models/Notification.js: schema notification
@@ -144,6 +146,7 @@ npm run dev
 - /api/tasks
 - /api/reports
 - /api/notifications
+- /api/upload
 
 ## 9. Commit convention (Conventional Commits)
 

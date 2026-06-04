@@ -102,11 +102,20 @@ User routes:
 - Mark all as read
 - Clear all notifications with confirm modal
 
+## Task Attachments
+
+Task create/edit screens support:
+
+- Upload image attachments to Cloudinary
+- Paste file links manually
+- Preview images on create/edit and details screens
+
 ## API Integration
 
 - Base URL: `src/utils/apiPaths.js`
 - Auth token attached by Axios request interceptor
 - On HTTP 401 with auth header, token is cleared and user is redirected to `/login`
+- Upload endpoint: `/api/upload/image` mapped in `API_PATHS.IMAGES.UPLOAD_GENERAL_IMAGE`
 
 ## Conventional Commit
 
