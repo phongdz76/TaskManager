@@ -1,4 +1,4 @@
-# Task Manager 
+# Task Manager
 
 Task Manager la du an full-stack quan ly cong viec, gom backend API (Express + MongoDB) va frontend (React + Vite).
 
@@ -72,10 +72,10 @@ TaskManager/
 - frontend/Task-Manager/src/routes/PrivateRoute.jsx: chan route theo role
 - frontend/Task-Manager/src/utils/apiPaths.js: map endpoint API
 - frontend/Task-Manager/src/utils/axiosInstance.js: axios instance + interceptor
-- frontend/Task-Manager/src/pages/Admin/*: man hinh admin
-- frontend/Task-Manager/src/pages/User/*: man hinh user
-- frontend/Task-Manager/src/pages/Auth/*: dang nhap/dang ky/quen mat khau
-- frontend/Task-Manager/src/components/tasks/*: cac component task dung chung
+- frontend/Task-Manager/src/pages/Admin/\*: man hinh admin
+- frontend/Task-Manager/src/pages/User/\*: man hinh user
+- frontend/Task-Manager/src/pages/Auth/\*: dang nhap/dang ky/quen mat khau
+- frontend/Task-Manager/src/components/tasks/\*: cac component task dung chung
 
 ## 4. Cong nghe su dung
 

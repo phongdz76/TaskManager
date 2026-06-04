@@ -869,9 +869,9 @@ Quyền: admin, assignee, hoặc creator.
 
 **Content-Type:** `multipart/form-data`
 
-| Field   | Kiểu | Mô tả                |
-| ------- | ---- | -------------------- |
-| `image` | File | File ảnh đính kèm    |
+| Field   | Kiểu | Mô tả             |
+| ------- | ---- | ----------------- |
+| `image` | File | File ảnh đính kèm |
 
 **Response `200`:**
 
