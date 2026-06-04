@@ -1,4 +1,4 @@
-# Task Manager Monorepo
+# Task Manager 
 
 Task Manager la du an full-stack quan ly cong viec, gom backend API (Express + MongoDB) va frontend (React + Vite).
 
