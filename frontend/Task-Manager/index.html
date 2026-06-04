@@ -6,11 +6,111 @@
   <link rel="icon" type="image/png" href="/iconweb.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Task-Manager</title>
+  <style>
+    /* Absolute override for Google Translate */
+    iframe.goog-te-banner-frame {
+      display: none !important;
+      visibility: hidden !important;
+    }
+    .goog-te-banner-frame {
+      display: none !important;
+    }
+    body {
+      top: 0px !important;
+      position: static !important;
+    }
+    #goog-gt-tt, .goog-te-balloon-frame {
+      display: none !important;
+    }
+    .goog-text-highlight {
+      background: none !important;
+      box-shadow: none !important;
+    }
+    .VIpgJd-ZVi9od-ORHb-OEVmcd {
+      display: none !important;
+    }
+    .VIpgJd-ZVi9od-aZ2wEe-wOHMyf {
+      display: none !important;
+    }
+
+    /* Preloader CSS */
+    #app-preloader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #fcfbfc;
+      z-index: 9999999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    /* Dark mode support for preloader based on localStorage */
+    html.dark #app-preloader {
+      background-color: #0f172a;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(19, 104, 236, 0.2);
+      border-left-color: #1368EC;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+  <script>
+    // Pre-check dark mode so the preloader matches the theme immediately
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    }
+  </script>
 </head>
 
 <body>
+  <!-- Preloader Screen -->
+  <div id="app-preloader">
+    <div class="spinner"></div>
+    <p style="margin-top: 16px; font-family: 'Open Sans', sans-serif; color: #1368EC; font-weight: 600;">Loading ...</p>
+  </div>
+
+  <div id="google_translate_element"></div>
   <div id="root"></div>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({
+        pageLanguage: 'en',
+        includedLanguages: 'vi,en',
+        layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+        autoDisplay: false
+      }, 'google_translate_element');
+    }
+  </script>
+  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
   <script type="module" src="/src/main.jsx"></script>
+
+  <!-- Remove Preloader Script -->
+  <script>
+    window.addEventListener('load', () => {
+      // Wait a short moment (800ms) for Google Translate and React to finish rendering
+      setTimeout(() => {
+        const preloader = document.getElementById('app-preloader');
+        if (preloader) {
+          preloader.style.opacity = '0';
+          preloader.style.visibility = 'hidden';
+          setTimeout(() => preloader.remove(), 500); // Remove from DOM after transition
+        }
+      }, 800);
+    });
+  </script>
 </body>
 
 </html>

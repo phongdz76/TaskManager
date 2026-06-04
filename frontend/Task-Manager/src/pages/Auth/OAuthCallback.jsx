@@ -60,8 +60,9 @@ export default function OAuthCallback() {
         return;
       }
 
-      // Remove sensitive callback params from URL as soon as possible.
-      window.history.replaceState(null, "", window.location.pathname);
+      // We no longer manually clear the URL here because React 18 Strict Mode
+      // will re-run this effect and need the URL parameters. The parameters
+      // will naturally be cleared when we navigate to the dashboard anyway.
 
       updateUser(
         {
