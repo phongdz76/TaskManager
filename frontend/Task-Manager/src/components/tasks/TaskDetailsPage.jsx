@@ -19,6 +19,13 @@ import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import PageContainer from "../common/PageContainer";
 
+const isImageUrl = (url) => {
+  if (!url) return false;
+  if (/\.(jpeg|jpg|gif|png|webp|svg|avif)(\?.*)?$/i.test(url)) return true;
+  if (url.includes("res.cloudinary.com") && url.includes("/image/upload")) return true;
+  return false;
+};
+
 const STATUS_STYLES = {
   Pending: "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-500 border-yellow-200 dark:border-yellow-700/50",
   "In-Progress": "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700/50",
@@ -310,38 +317,55 @@ export default function TaskDetailsPage({
                       Attachments
                     </p>
                     {attachmentLinks.length > 0 ? (
-                      <div className="mt-2 space-y-2">
-                        {attachmentLinks.map((attachment, index) => (
-                          <div
-                            key={`${attachment.raw}-${index}`}
-                            className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 px-3 py-2"
-                          >
-                            <div className="min-w-0 flex items-center gap-2">
-                              <FaPaperclip className="text-indigo-500 shrink-0" />
-                              {attachment.href ? (
+                      <div className="mt-2 space-y-4">
+                        {attachmentLinks.map((attachment, index) => {
+                          const isImage = isImageUrl(attachment.href);
+                          return (
+                            <div key={`${attachment.raw}-${index}`}>
+                              {isImage ? (
                                 <a
                                   href={attachment.href}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="text-sm text-blue-600 hover:text-blue-700 hover:underline truncate"
-                                  title={attachment.raw}
+                                  className="block rounded-xl overflow-hidden border border-gray-100 dark:border-slate-700 hover:opacity-90 transition"
                                 >
-                                  {attachment.label}
+                                  <img
+                                    src={attachment.href}
+                                    alt="attachment"
+                                    className="max-h-48 rounded-lg object-contain bg-gray-100 dark:bg-slate-800"
+                                  />
                                 </a>
                               ) : (
-                                <span
-                                  className="text-sm text-gray-700 dark:text-gray-300 truncate"
-                                  title={attachment.raw}
-                                >
-                                  {attachment.raw}
-                                </span>
+                                <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 px-3 py-2">
+                                  <div className="min-w-0 flex items-center gap-2">
+                                    <FaPaperclip className="text-indigo-500 shrink-0" />
+                                    {attachment.href ? (
+                                      <a
+                                        href={attachment.href}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-sm text-blue-600 hover:text-blue-700 hover:underline truncate"
+                                        title={attachment.raw}
+                                      >
+                                        {attachment.label}
+                                      </a>
+                                    ) : (
+                                      <span
+                                        className="text-sm text-gray-700 dark:text-gray-300 truncate"
+                                        title={attachment.raw}
+                                      >
+                                        {attachment.raw}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {attachment.href && (
+                                    <FaExternalLinkAlt className="text-gray-400 text-xs shrink-0" />
+                                  )}
+                                </div>
                               )}
                             </div>
-                            {attachment.href && (
-                              <FaExternalLinkAlt className="text-gray-400 text-xs shrink-0" />
-                            )}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <p className="text-sm text-gray-500 mt-1">

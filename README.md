@@ -1,4 +1,4 @@
-# Task Manager 
+# Task Manager
 
 Task Manager la du an full-stack quan ly cong viec, gom backend API (Express + MongoDB) va frontend (React + Vite).
 
@@ -13,6 +13,7 @@ Task Manager la du an full-stack quan ly cong viec, gom backend API (Express + M
 - Thong ke dashboard + bieu do
 - Notification trong he thong
 - Xuat bao cao Excel
+- Upload file/anh dinh kem cho task
 
 ## 2. Cau truc du an
 
@@ -46,6 +47,7 @@ TaskManager/
 - backend/routes/taskRoutes.js: route task
 - backend/routes/reportRoutes.js: route report
 - backend/routes/notificationRoutes.js: route notification
+- backend/routes/uploadRoutes.js: route upload file/anh
 - backend/models/User.js: schema user
 - backend/models/Task.js: schema task
 - backend/models/Notification.js: schema notification
@@ -70,10 +72,10 @@ TaskManager/
 - frontend/Task-Manager/src/routes/PrivateRoute.jsx: chan route theo role
 - frontend/Task-Manager/src/utils/apiPaths.js: map endpoint API
 - frontend/Task-Manager/src/utils/axiosInstance.js: axios instance + interceptor
-- frontend/Task-Manager/src/pages/Admin/*: man hinh admin
-- frontend/Task-Manager/src/pages/User/*: man hinh user
-- frontend/Task-Manager/src/pages/Auth/*: dang nhap/dang ky/quen mat khau
-- frontend/Task-Manager/src/components/tasks/*: cac component task dung chung
+- frontend/Task-Manager/src/pages/Admin/\*: man hinh admin
+- frontend/Task-Manager/src/pages/User/\*: man hinh user
+- frontend/Task-Manager/src/pages/Auth/\*: dang nhap/dang ky/quen mat khau
+- frontend/Task-Manager/src/components/tasks/\*: cac component task dung chung
 
 ## 4. Cong nghe su dung
 
@@ -144,6 +146,7 @@ npm run dev
 - /api/tasks
 - /api/reports
 - /api/notifications
+- /api/upload
 
 ## 9. Commit convention (Conventional Commits)
 

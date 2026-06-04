@@ -20,6 +20,7 @@ REST API server cho ứng dụng quản lý công việc, xây dựng bằng **N
   - [Tasks](#tasks-apitasks)
   - [Reports](#reports-apireports)
   - [Notifications](#notifications-apinotifications)
+  - [Uploads](#uploads-apiupload)
 - [Phân quyền](#phân-quyền)
 - [Xác thực](#xác-thực)
 
@@ -36,6 +37,7 @@ Backend cung cấp các API để:
 - Cập nhật checklist, trạng thái, ghim task
 - Quản lý trung tâm thông báo (notifications)
 - Xuất báo cáo Excel
+- Upload file/ảnh đính kèm
 
 ---
 
@@ -158,7 +160,8 @@ backend/
 │   ├── userRoutes.js
 │   ├── taskRoutes.js
 │   ├── reportRoutes.js
-│   └── notificationRoutes.js
+│   ├── notificationRoutes.js
+│   └── uploadRoutes.js
 └── utils/
     └── teamMembersSummary.js
 ```
@@ -230,6 +233,7 @@ Base routes:
 - `/api/tasks`
 - `/api/reports`
 - `/api/notifications`
+- `/api/upload`
 
 ---
 
@@ -855,6 +859,27 @@ Quyền: admin, assignee, hoặc creator.
 
 ```json
 { "message": "All notifications deleted" }
+```
+
+---
+
+### Uploads `/api/upload`
+
+#### `POST /api/upload/image` — Upload ảnh chung `[Private]`
+
+**Content-Type:** `multipart/form-data`
+
+| Field   | Kiểu | Mô tả             |
+| ------- | ---- | ----------------- |
+| `image` | File | File ảnh đính kèm |
+
+**Response `200`:**
+
+```json
+{
+  "message": "File uploaded successfully",
+  "imageUrl": "https://res.cloudinary.com/..."
+}
 ```
 
 ---

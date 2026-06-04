@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
@@ -14,6 +14,7 @@ import {
   FaCalendarAlt,
   FaArrowLeft,
   FaLink,
+  FaUpload,
 } from "react-icons/fa";
 import { generateGoogleCalendarLink } from "../../utils/calendarUtils";
 import { useNavigate, useParams } from "react-router-dom";
@@ -22,6 +23,13 @@ import moment from "moment";
 import Pagination from "../Pagination";
 import PageContainer from "../common/PageContainer";
 import PageLoader from "../common/PageLoader";
+
+const isImageUrl = (url) => {
+  if (!url) return false;
+  if (/\.(jpeg|jpg|gif|png|webp|svg|avif)(\?.*)?$/i.test(url)) return true;
+  if (url.includes("res.cloudinary.com") && url.includes("/image/upload")) return true;
+  return false;
+};
 
 const INITIAL_STATE = {
   title: "",
@@ -93,6 +101,8 @@ export default function EditTaskPage({
   const [userSearch, setUserSearch] = useState("");
   const [assigneePage, setAssigneePage] = useState(1);
   const [syncToCalendar, setSyncToCalendar] = useState(false);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+  const fileInputRef = useRef(null);
 
   const isAdmin = user?.role === "admin";
   const resolvedActiveMenu =
@@ -241,6 +251,43 @@ export default function EditTaskPage({
       return normalizedUrl;
     } catch {
       return null;
+    }
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (formData.attachments.length >= MAX_ATTACHMENTS) {
+      toast.error(`You can add up to ${MAX_ATTACHMENTS} attachments`);
+      return;
+    }
+
+    const fileFormData = new FormData();
+    fileFormData.append("image", file);
+
+    try {
+      setIsUploadingAttachment(true);
+      const res = await axiosInstance.post(API_PATHS.IMAGES.UPLOAD_GENERAL_IMAGE, fileFormData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const imageUrl = res.data.imageUrl;
+      setFormData((prev) => ({
+        ...prev,
+        attachments: [...prev.attachments, imageUrl],
+      }));
+      toast.success("File uploaded successfully");
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error(error.response?.data?.message || "Failed to upload file");
+    } finally {
+      setIsUploadingAttachment(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -559,37 +606,63 @@ export default function EditTaskPage({
                       <button
                         type="button"
                         onClick={handleAddAttachment}
-                        className="px-4 py-2.5 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-600 font-medium flex items-center gap-2 transition text-sm"
+                        className="px-4 py-2.5 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-600 font-medium flex items-center gap-2 transition text-sm whitespace-nowrap"
                       >
                         <FaPlus size={12} /> Add Link
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploadingAttachment}
+                        className="px-4 py-2.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-medium flex items-center gap-2 transition text-sm whitespace-nowrap disabled:opacity-50"
+                      >
+                        {isUploadingAttachment ? <FaSpinner className="animate-spin" size={12} /> : <FaUpload size={12} />}
+                        {isUploadingAttachment ? "Uploading..." : "Upload File"}
+                      </button>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                      />
                     </div>
 
                     {formData.attachments.length > 0 ? (
                       <ul className="space-y-2">
-                        {formData.attachments.map((attachment, index) => (
-                          <li
-                            key={`${attachment}-${index}`}
-                            className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-slate-900/50 rounded-xl border border-gray-100 dark:border-slate-700"
-                          >
-                            <a
-                              href={attachment}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-sm text-blue-600 hover:text-blue-700 hover:underline truncate"
-                              title={attachment}
+                        {formData.attachments.map((attachment, index) => {
+                          const isImage = isImageUrl(attachment);
+                          return (
+                            <li
+                              key={`${attachment}-${index}`}
+                              className={`flex justify-between gap-3 p-3 bg-gray-50 dark:bg-slate-900/50 rounded-xl border border-gray-100 dark:border-slate-700 ${isImage ? "flex-col items-start" : "items-center"}`}
                             >
-                              {attachment}
-                            </a>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveAttachment(index)}
-                              className="text-gray-300 hover:text-red-500 transition p-1 shrink-0"
-                            >
-                              <FaTrash size={14} />
-                            </button>
-                          </li>
-                        ))}
+                              {isImage ? (
+                                <a href={attachment} target="_blank" rel="noreferrer" className="block w-full">
+                                  <img src={attachment} alt="Attachment" className="max-h-48 rounded-lg object-contain bg-gray-100 dark:bg-slate-800" />
+                                </a>
+                              ) : (
+                                <a
+                                  href={attachment}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-sm text-blue-600 hover:text-blue-700 hover:underline truncate"
+                                  title={attachment}
+                                >
+                                  {attachment}
+                                </a>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveAttachment(index)}
+                                className={`text-red-500 hover:text-red-700 p-1 ${isImage ? "self-end" : ""}`}
+                                title="Remove attachment"
+                              >
+                                <FaTimes size={14} />
+                              </button>
+                            </li>
+                          );
+                        })}
                       </ul>
                     ) : (
                       <p className="text-sm text-gray-400 italic py-2">
