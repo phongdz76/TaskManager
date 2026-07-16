@@ -82,6 +82,7 @@ const CreatorAvatar = ({ imageUrl, creatorName }) => {
     <img
       src={normalizedImageUrl}
       alt={creatorName}
+      referrerPolicy="no-referrer"
       className="w-6 h-6 rounded-full object-cover mr-2 border border-gray-200 dark:border-slate-700"
       onError={() => setHasImageError(true)}
     />
