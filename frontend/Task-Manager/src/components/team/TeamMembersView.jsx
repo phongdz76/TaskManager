@@ -34,6 +34,7 @@ const TeamMemberAvatar = ({ imageUrl, username }) => {
     <img
       src={normalizedImageUrl}
       alt={username || "User"}
+      referrerPolicy="no-referrer"
       className="w-12 h-12 rounded-full object-cover border border-gray-200 dark:border-slate-700"
       onError={() => setHasImageError(true)}
     />

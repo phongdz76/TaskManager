@@ -76,6 +76,7 @@ const MemberAvatar = ({
     <img
       src={normalizedImageUrl}
       alt={displayName || "User"}
+      referrerPolicy="no-referrer"
       className={`${sizeClass} rounded-full object-cover border border-gray-200 dark:border-slate-700 shrink-0`}
       onError={() => setHasImageError(true)}
     />

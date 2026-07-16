@@ -259,17 +259,25 @@ export default function ManagerUser() {
                           {/* User Info */}
                           <td className="py-4 px-6">
                             <div className="flex items-center">
-                              {u.profileImageUrl ? (
-                                <img
-                                  src={u.profileImageUrl}
-                                  alt={u.username}
-                                  className="w-10 h-10 rounded-full object-cover mr-4 border border-gray-200 dark:border-slate-700"
-                                />
-                              ) : (
-                                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-lg mr-4">
-                                  {u.username.charAt(0).toUpperCase()}
-                                </div>
-                              )}
+                              <img
+                                src={u.profileImageUrl || ""}
+                                alt={u.username}
+                                referrerPolicy="no-referrer"
+                                className="w-10 h-10 rounded-full object-cover mr-4 border border-gray-200 dark:border-slate-700"
+                                style={{ display: u.profileImageUrl ? 'block' : 'none' }}
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                  if (e.target.nextSibling) {
+                                    e.target.nextSibling.style.display = "flex";
+                                  }
+                                }}
+                              />
+                              <div 
+                                className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 items-center justify-center font-bold text-lg mr-4"
+                                style={{ display: u.profileImageUrl ? 'none' : 'flex' }}
+                              >
+                                {u.username ? u.username.charAt(0).toUpperCase() : "U"}
+                              </div>
                               <div>
                                 <p className="text-gray-800 dark:text-gray-100 font-semibold">
                                   {u.username}

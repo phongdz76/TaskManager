@@ -540,6 +540,7 @@ export default function TaskDetailsPage({
                                   <img
                                     src={assignee.profileImageUrl}
                                     alt={name}
+                                    referrerPolicy="no-referrer"
                                     className="w-7 h-7 rounded-full object-cover border border-gray-200 dark:border-slate-700"
                                   />
                                 ) : (

@@ -46,6 +46,7 @@ export default function SideMenu({ activeMenu }) {
             <img
               src={avatarUrl}
               alt="Profile Image"
+              referrerPolicy="no-referrer"
               className="w-20 h-20 bg-slate-200 rounded-full object-cover"
               onError={() => setAvatarLoadError(true)}
             />

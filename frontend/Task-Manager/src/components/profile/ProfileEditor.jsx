@@ -294,6 +294,7 @@ export default function ProfileEditor() {
             <img
               src={imageUrl}
               alt="Profile Avatar"
+              referrerPolicy="no-referrer"
               className="w-32 h-32 rounded-full object-cover border border-gray-200 dark:border-slate-700"
               onError={() => setImageLoadError(true)}
             />
