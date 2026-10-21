@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "../../../test-utils.jsx";
+import { render, screen, waitFor, fireEvent } from "../../test-utils.jsx";
 import ManagerUser from "@frontend/pages/Admin/ManagerUser.jsx";
 import axiosInstance from "@frontend/utils/axiosInstance.js";
 
@@ -140,7 +140,7 @@ describe("ManagerUser Page", () => {
     fireEvent.click(promoteButtons[0]);
 
     // Modal appears
-    expect(screen.getByText(/promote to admin/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /promote to admin/i })).toBeInTheDocument();
     
     // Confirm promote
     const confirmButton = screen.getByRole("button", { name: "Confirm" });
@@ -168,7 +168,7 @@ describe("ManagerUser Page", () => {
     fireEvent.click(deleteButtons[0]);
 
     // Modal appears
-    expect(screen.getByText(/delete user/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /delete user/i })).toBeInTheDocument();
     
     // Confirm delete
     const confirmButton = screen.getByRole("button", { name: "Confirm" });

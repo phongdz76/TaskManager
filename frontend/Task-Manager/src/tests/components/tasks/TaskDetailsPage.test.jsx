@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "../../../test-utils.jsx";
+import { render, screen, waitFor, fireEvent } from "../../test-utils.jsx";
 import TaskDetailsPage from "@frontend/components/tasks/TaskDetailsPage.jsx";
 import axiosInstance from "@frontend/utils/axiosInstance.js";
 
@@ -99,7 +99,7 @@ describe("TaskDetailsPage Component", () => {
 
     await waitFor(() => {
       expect(axiosInstance.put).toHaveBeenCalledWith(
-        expect.stringContaining("/checklist"),
+        "/api/tasks/task1/todo",
         expect.objectContaining({
           todoChecklist: [
             { text: "Item 1", completed: true },

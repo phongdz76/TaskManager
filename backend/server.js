@@ -21,7 +21,9 @@ app.use(
 );
 
 // Connect to MongoDB
-connectDB();
+if (process.env.NODE_ENV !== "test") {
+  connectDB();
+}
 
 // Middleware
 app.use(express.json());
@@ -41,7 +43,7 @@ app.get("/", (req, res) => {
 export default app;
 
 // Local development server
-if (!process.env.VERCEL) {
+if (process.env.NODE_ENV !== "test" && !process.env.VERCEL) {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

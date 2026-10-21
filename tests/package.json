@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest run",
+    "test": "npm run test:backend && npm run test:frontend",
     "test:watch": "vitest",
     "test:backend": "vitest run --project backend",
-    "test:frontend": "vitest run --project frontend",
+    "test:frontend": "npm --prefix ../frontend/Task-Manager test",
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
@@ -16,7 +16,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "^5.1.1",
     "axios": "^1.13.6",
-    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

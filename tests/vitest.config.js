@@ -20,26 +20,9 @@ export default defineConfig({
         resolve: {
           alias: {
             "@backend": path.resolve(__dirname, "../backend"),
+            "mongoose": path.resolve(__dirname, "../backend/node_modules/mongoose"),
           },
-        },
-      },
-      // Frontend tests
-      {
-        test: {
-          name: "frontend",
-          environment: "jsdom",
-          include: ["frontend-tests/**/*.test.{js,jsx}"],
-          setupFiles: ["./frontend-tests/setup.js"],
-          testTimeout: 15000,
-        },
-        resolve: {
-          alias: {
-            "@frontend": path.resolve(__dirname, "../frontend/Task-Manager/src"),
-            "react": path.resolve(__dirname, "./node_modules/react"),
-            "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
-            "react-router-dom": path.resolve(__dirname, "./node_modules/react-router-dom")
-          },
-          dedupe: ["react", "react-dom"]
+          dedupe: ["mongoose"]
         },
       },
     ]

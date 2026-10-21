@@ -1,10 +1,14 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "../../../test-utils.jsx";
+import { render, screen, waitFor, fireEvent } from "../../test-utils.jsx";
 import CreateTaskPage from "@frontend/components/tasks/CreateTaskPage.jsx";
 import axiosInstance from "@frontend/utils/axiosInstance.js";
+import toast from "react-hot-toast";
 
 // Mock dependencies
+vi.mock("react-hot-toast", () => ({
+  default: { error: vi.fn(), success: vi.fn() },
+}));
 vi.mock("@frontend/hooks/useUserAuth.jsx", () => ({
   default: vi.fn(),
 }));
@@ -55,15 +59,10 @@ describe("CreateTaskPage Component", () => {
       expect(screen.getByText("Alice")).toBeInTheDocument();
     });
 
-    const submitBtn = screen.getByRole("button", { name: /create task/i });
-    
-    // We can't easily test HTML5 required attribute validation if JSDOM doesn't support it fully, 
-    // but the component has manual validation for title length via toast.
-    // Let's set a title that's too short (e.g. 1 char) - but wait, input has minLength={3}.
-    const titleInput = screen.getAllByRole("textbox")[0];
-    
-    // Actually, JSDOM intercepts form submit if required is empty or minLength fails, 
-    // we bypass it or just test valid submission.
+    fireEvent.submit(screen.getByRole("button", { name: /create task/i }).closest("form"));
+
+    expect(toast.error).toHaveBeenCalledWith("Title is required");
+    expect(axiosInstance.post).not.toHaveBeenCalled();
   });
 
   it("should submit valid task data", async () => {
@@ -87,7 +86,7 @@ describe("CreateTaskPage Component", () => {
     // Add Checklist Item
     const todoInput = screen.getByPlaceholderText("Add a sub-task...");
     fireEvent.change(todoInput, { target: { value: "Step 1" } });
-    fireEvent.click(screen.getByRole("button", { name: /add/i, hidden: false }));
+    fireEvent.click(screen.getByRole("button", { name: /^add$/i }));
     expect(screen.getByText("Step 1")).toBeInTheDocument();
 
     // Assign User

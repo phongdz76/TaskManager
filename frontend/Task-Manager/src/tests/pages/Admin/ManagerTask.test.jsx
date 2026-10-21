@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "../../../test-utils.jsx";
+import { render, screen, waitFor, fireEvent } from "../../test-utils.jsx";
 import ManagerTask from "@frontend/pages/Admin/ManagerTask.jsx";
 import axiosInstance from "@frontend/utils/axiosInstance.js";
 

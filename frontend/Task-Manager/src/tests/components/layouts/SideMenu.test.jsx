@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "../../../test-utils.jsx";
+import { render, screen, fireEvent } from "../../test-utils.jsx";
 import SideMenu from "@frontend/components/layouts/SideMenu.jsx";
 import { ADMIN_SIDE_MENU_DATA, USER_SIDE_MENU_DATA } from "@frontend/utils/data.js";
 

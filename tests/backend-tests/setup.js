@@ -2,6 +2,20 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
 import { beforeAll, afterEach, afterAll } from "vitest";
 
+import { vi } from "vitest";
+
+// Mock nodemailer to prevent SMTP connection hangs during testing
+vi.mock("nodemailer", () => {
+  return {
+    default: {
+      createTransport: () => ({
+        sendMail: vi.fn().mockResolvedValue({ messageId: "test-message-id" }),
+        verify: vi.fn().mockResolvedValue(true),
+      }),
+    },
+  };
+});
+
 let mongoServer;
 
 beforeAll(async () => {

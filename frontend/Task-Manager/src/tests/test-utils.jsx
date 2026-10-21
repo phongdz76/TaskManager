@@ -9,9 +9,7 @@ import { UserContext } from "@frontend/context/userContext.jsx";
 const customRender = (ui, options = {}) => {
   const { route = "/", userState = { user: null, loading: false }, ...renderOptions } = options;
   
-  if (route !== "/") {
-    window.history.pushState({}, "Test page", route);
-  }
+  window.history.pushState({}, "Test page", route);
 
   const mockUserContext = {
     updateUser: () => {},

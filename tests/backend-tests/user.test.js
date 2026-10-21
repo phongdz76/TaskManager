@@ -206,7 +206,7 @@ describe("DELETE /api/users/:id", () => {
 describe("GET /api/users/assignable", () => {
   it("should return all users for any authenticated user", async () => {
     const user = await createTestUser();
-    await createTestUser({ email: "a@example.com", username: "a" });
+    await createTestUser({ email: "a@example.com", username: "user_a" });
     const token = getAuthToken(user);
 
     const res = await request(app)
