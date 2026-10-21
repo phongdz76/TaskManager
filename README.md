@@ -213,6 +213,9 @@ Frontend: `npm run dev` trong `frontend/Task-Manager`, sau do mo http://localhos
 - Trong **Team Members**, bam **Nhan tin** de mo chat nhanh.
 - Trong chi tiet task, bam **Mo thao luan** de trao doi cung nguoi tao/nguoi duoc giao.
 - Nut chat o goc duoi ben phai mo danh sach chat nhanh; cua so noi giu ban nhap khi doi trang.
+- Bam 1 hoac 2 lan vao o van ban cua tin nhan de chon **Tra loi**. Tin trich dan hien tren o nhap; bam X de huy.
+- Nut anh trong o nhap cho phep chon toi da 4 anh JPG/PNG, moi anh toi da 5 MB; co the dan anh tu clipboard.
+- Anh duoc luu rieng tu tren Cloudinary. API kiem tra quyen hoi thoai truoc khi tai anh; khong tra URL Cloudinary cong khai.
 
 Chat luu tin bang MongoDB transaction, can Atlas hoac MongoDB replica set. MongoDB standalone khong ho tro gui tin chat.
 `CLIENT_URL` trong backend phai chua origin cua frontend; nhieu origin cach nhau bang dau phay.
@@ -232,6 +235,16 @@ npm run test:chat:e2e
 
 Can Chrome/Edge da cai (hoac dat `CHROME_PATH`); khong can tai browser moi.
 Anh kiem tra luu trong `.cache/chat-smoke/`. Kiem thu nay khong dung database trong `backend/.env`.
+
+De kiem tra upload Cloudinary that tren PowerShell:
+
+```powershell
+$env:CHAT_SMOKE_CLOUDINARY = 'true'
+npm run test:chat:e2e
+```
+
+Bai kiem tra chi doc ba bien `CLOUDINARY_*` tu `backend/.env`, van dung database tam.
+Anh kiem tra duoc xoa khoi Cloudinary sau khi chay xong. Cac khoa Cloudinary chi nam o backend.
 
 Tu thu muc goc, xuat ket qua hai bo test ra CSV de mo bang Excel:
 

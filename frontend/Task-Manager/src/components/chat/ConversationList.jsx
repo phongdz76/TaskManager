@@ -105,7 +105,10 @@ export default function ConversationList({ selectedId, onSelect }) {
                   {conversation.title}
                 </p>
                 <p className="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">
-                  {conversation.lastMessage?.text || "Bắt đầu cuộc trò chuyện"}
+                  {conversation.lastMessage?.text ||
+                    (conversation.lastMessage?.type === "image"
+                      ? "Đã gửi ảnh"
+                      : "Bắt đầu cuộc trò chuyện")}
                 </p>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-2">

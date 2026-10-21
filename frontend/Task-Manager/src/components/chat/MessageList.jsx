@@ -13,6 +13,7 @@ export default function MessageList({
   onLoadOlder,
   onMarkRead,
   onRetry,
+  onReply,
 }) {
   const scrollRef = useRef(null);
   const scrollState = useRef({
@@ -91,6 +92,13 @@ export default function MessageList({
     };
 
     const frame = requestAnimationFrame(markVisibleMessagesRead);
+    const handleImageLoad = () => {
+      if (scrollState.current.nearBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
+      markVisibleMessagesRead();
+    };
+    container.addEventListener("load", handleImageLoad, true);
     container.addEventListener("scroll", markVisibleMessagesRead);
     document.addEventListener("visibilitychange", markVisibleMessagesRead);
     window.addEventListener("focus", markVisibleMessagesRead);
@@ -99,6 +107,7 @@ export default function MessageList({
 
     return () => {
       cancelAnimationFrame(frame);
+      container.removeEventListener("load", handleImageLoad, true);
       container.removeEventListener("scroll", markVisibleMessagesRead);
       document.removeEventListener("visibilitychange", markVisibleMessagesRead);
       window.removeEventListener("focus", markVisibleMessagesRead);
@@ -165,6 +174,7 @@ export default function MessageList({
             message={message}
             isOwnMessage={message.sender.id === currentUserId}
             onRetry={onRetry}
+            onReply={onReply}
           />
         ))}
       </div>

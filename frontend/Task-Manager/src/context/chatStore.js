@@ -26,6 +26,8 @@ const emptyState = () => ({
   conversationIds: [],
   messages: {},
   drafts: {},
+  imageDrafts: {},
+  replyTargets: {},
   loaded: {},
   hasOlder: {},
   errors: {},
@@ -51,6 +53,21 @@ export function createChatStore(user, api = chatApi) {
   const syncedSequences = new Map();
   const syncAgain = new Set();
   let listing = null;
+  const localImageUrls = new Map();
+
+  const releaseImages = (id, images) => {
+    for (const image of images) {
+      URL.revokeObjectURL(image.previewUrl);
+      localImageUrls.get(id)?.delete(image.previewUrl);
+    }
+  };
+
+  const releaseAllImages = () => {
+    for (const urls of localImageUrls.values()) {
+      for (const url of urls) URL.revokeObjectURL(url);
+    }
+    localImageUrls.clear();
+  };
   const update = (value) => {
     if (!active) return;
     state = { ...state, ...value };
@@ -69,11 +86,15 @@ export function createChatStore(user, api = chatApi) {
     versions.set(id, (versions.get(id) || 0) + 1);
     syncedSequences.delete(id);
     syncAgain.delete(id);
+    for (const url of localImageUrls.get(id) || []) URL.revokeObjectURL(url);
+    localImageUrls.delete(id);
     const next = {};
     for (const key of [
       "conversations",
       "messages",
       "drafts",
+      "imageDrafts",
+      "replyTargets",
       "loaded",
       "hasOlder",
       "errors",
@@ -206,7 +227,12 @@ export function createChatStore(user, api = chatApi) {
       if (valid(id, version)) handleError(id, error);
     }
   };
-  const send = async (id, text, clientMessageId = crypto.randomUUID()) => {
+  const send = async (
+    id,
+    text,
+    clientMessageId = crypto.randomUUID(),
+    options = {},
+  ) => {
     if (!active || state.revoked[id]) return;
     if (!versions.has(id)) versions.set(id, 0);
     const version = versions.get(id);
@@ -216,6 +242,14 @@ export function createChatStore(user, api = chatApi) {
       sender: { id: user._id || user.id, username: user.username },
       clientMessageId,
       text,
+      type: options.images?.length ? "image" : "text",
+      images: (options.images || []).map((image) => ({
+        id: image.id,
+        previewUrl: image.previewUrl,
+        originalName: image.file.name,
+      })),
+      replyTo: options.replyTo || null,
+      retryOptions: options,
       status: "pending",
       createdAt: new Date().toISOString(),
     };
@@ -226,7 +260,14 @@ export function createChatStore(user, api = chatApi) {
       },
     });
     try {
-      const message = await api.sendMessage(id, { text, clientMessageId });
+      const message = await api.sendMessage(id, {
+        text,
+        clientMessageId,
+        ...(options.replyTo ? { replyToMessageId: options.replyTo.id } : {}),
+        ...(options.images?.length
+          ? { files: options.images.map((image) => image.file) }
+          : {}),
+      });
       if (!valid(id, version)) return;
       update({
         messages: {
@@ -235,9 +276,20 @@ export function createChatStore(user, api = chatApi) {
         },
         errors: { ...state.errors, [id]: "" },
       });
+      releaseImages(id, options.images || []);
       void refreshList();
     } catch (error) {
       if (!valid(id, version)) return;
+      const saved = (state.messages[id] || []).some(
+        (message) =>
+          message.sequence &&
+          message.clientMessageId === clientMessageId &&
+          message.sender.id === (user._id || user.id),
+      );
+      if (saved) {
+        releaseImages(id, options.images || []);
+        return;
+      }
       update({
         messages: {
           ...state.messages,
@@ -295,6 +347,7 @@ export function createChatStore(user, api = chatApi) {
     destroy: () => {
       active = false;
       listeners.clear();
+      releaseAllImages();
     },
     retainSession: () => {
       const version = ++sessionVersion;
@@ -305,6 +358,7 @@ export function createChatStore(user, api = chatApi) {
           if (version === sessionVersion) {
             active = false;
             listeners.clear();
+            releaseAllImages();
           }
         });
       };
@@ -313,6 +367,61 @@ export function createChatStore(user, api = chatApi) {
     syncConversation,
     loadOlder,
     send,
+    submitMessage: (id, text) => {
+      const options = {
+        images: state.imageDrafts[id] || [],
+        replyTo: state.replyTargets[id] || null,
+      };
+      update({
+        drafts: { ...state.drafts, [id]: "" },
+        imageDrafts: { ...state.imageDrafts, [id]: [] },
+        replyTargets: { ...state.replyTargets, [id]: null },
+      });
+      return send(id, text, crypto.randomUUID(), options);
+    },
+    addDraftImages: (id, files) => {
+      if ((state.imageDrafts[id]?.length || 0) + files.length > 4) return;
+      if (!localImageUrls.has(id)) localImageUrls.set(id, new Set());
+      const images = files.map((file) => {
+        const previewUrl = URL.createObjectURL(file);
+        localImageUrls.get(id).add(previewUrl);
+        return { id: crypto.randomUUID(), file, previewUrl };
+      });
+      update({
+        imageDrafts: {
+          ...state.imageDrafts,
+          [id]: [...(state.imageDrafts[id] || []), ...images],
+        },
+      });
+    },
+    removeDraftImage: (id, imageId) => {
+      const images = state.imageDrafts[id] || [];
+      releaseImages(
+        id,
+        images.filter((image) => image.id === imageId),
+      );
+      update({
+        imageDrafts: {
+          ...state.imageDrafts,
+          [id]: images.filter((image) => image.id !== imageId),
+        },
+      });
+    },
+    setReplyTarget: (id, message) =>
+      update({
+        replyTargets: {
+          ...state.replyTargets,
+          [id]: message
+            ? {
+                id: message.id,
+                sequence: message.sequence,
+                text: message.text,
+                sender: message.sender,
+                type: message.type,
+              }
+            : null,
+        },
+      }),
     markRead,
     removeConversation,
     setConnected: (connected) => update({ connected }),

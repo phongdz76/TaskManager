@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createChatStore } from "@frontend/context/chatStore.js";
 
 const user = { _id: "alice", username: "Alice" };
@@ -24,15 +24,20 @@ const message = (sequence, overrides = {}) => ({
 let api;
 
 beforeEach(() => {
+  vi.stubGlobal(
+    "URL",
+    class extends URL {
+      static createObjectURL = vi.fn(() => "blob:chat-image");
+      static revokeObjectURL = vi.fn();
+    },
+  );
   api = {
     getConversation: vi.fn().mockResolvedValue(conversation),
-    getConversations: vi
-      .fn()
-      .mockResolvedValue({
-        items: [conversation],
-        unreadTotal: 0,
-        nextCursor: null,
-      }),
+    getConversations: vi.fn().mockResolvedValue({
+      items: [conversation],
+      unreadTotal: 0,
+      nextCursor: null,
+    }),
     getMessages: vi
       .fn()
       .mockResolvedValue({ items: [message(1)], nextAfter: 1, hasMore: false }),
@@ -41,7 +46,56 @@ beforeEach(() => {
   };
 });
 
+afterEach(() => vi.unstubAllGlobals());
+
 describe("Shared chat state", () => {
+  it("retains selected images and the reply target until submitting the message", async () => {
+    const store = createChatStore(user, api);
+    const file = new File(["image"], "picture.png", { type: "image/png" });
+    store.addDraftImages("room", [file]);
+    store.setReplyTarget("room", message(1));
+    store.openWindow("room");
+    store.closeWindow("room");
+
+    expect(store.getSnapshot().imageDrafts.room).toHaveLength(1);
+    expect(store.getSnapshot().replyTargets.room.id).toBe("message-1");
+
+    api.sendMessage.mockResolvedValue(
+      message(2, { sender: { id: "alice" }, images: [{ id: "saved-image" }] }),
+    );
+    await store.submitMessage("room", "Caption");
+
+    expect(api.sendMessage).toHaveBeenCalledWith(
+      "room",
+      expect.objectContaining({
+        text: "Caption",
+        replyToMessageId: "message-1",
+        files: [file],
+      }),
+    );
+    expect(store.getSnapshot().imageDrafts.room).toEqual([]);
+    expect(store.getSnapshot().replyTargets.room).toBeNull();
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:chat-image");
+  });
+
+  it("keeps the file and original reply available when sending fails", async () => {
+    const store = createChatStore(user, api);
+    store.addDraftImages("room", [
+      new File(["image"], "picture.png", { type: "image/png" }),
+    ]);
+    store.setReplyTarget("room", message(1));
+    api.sendMessage.mockRejectedValue(new Error("Offline"));
+    await store.submitMessage("room", "");
+
+    const failed = store.getSnapshot().messages.room[0];
+    expect(failed.status).toBe("failed");
+    expect(failed.retryOptions.images[0].file.name).toBe("picture.png");
+    expect(failed.retryOptions.replyTo.id).toBe("message-1");
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+    store.removeConversation("room");
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:chat-image");
+  });
+
   it("restores a conversation when a new authorized response grants access again", async () => {
     const store = createChatStore(user, api);
     store.removeConversation("room");

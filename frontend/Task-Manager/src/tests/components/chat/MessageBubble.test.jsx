@@ -13,6 +13,29 @@ const message = {
 };
 
 describe("MessageBubble", () => {
+  it("selects a saved message for reply when clicking its text", () => {
+    const onReply = vi.fn();
+    render(
+      <MessageBubble message={message} onReply={onReply} onRetry={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByText(message.text));
+    expect(onReply).toHaveBeenCalledWith(message);
+  });
+
+  it("does not allow replying to an unsaved optimistic message", () => {
+    const onReply = vi.fn();
+    render(
+      <MessageBubble
+        message={{ ...message, sequence: undefined, status: "pending" }}
+        onReply={onReply}
+        onRetry={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: `Trả lời tin nhắn: ${message.text}` }),
+    ).toBeDisabled();
+  });
+
   it("renders message content as text", () => {
     const { container } = render(
       <MessageBubble

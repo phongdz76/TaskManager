@@ -27,12 +27,21 @@ export default function ConversationPanel({
   };
 
   const handleSendMessage = (text) => {
-    chat.setDraft(conversationId, "");
-    void chat.send(conversationId, text);
+    void chat.submitMessage(conversationId, text);
   };
 
   const handleRetryMessage = (message) => {
-    void chat.send(conversationId, message.text, message.clientMessageId);
+    void chat.send(
+      conversationId,
+      message.text,
+      message.clientMessageId,
+      message.retryOptions || {},
+    );
+  };
+
+  const handleReplyToMessage = (message) => {
+    chat.setReplyTarget(conversationId, message);
+    document.getElementById(`chat-composer-${conversationId}`)?.focus();
   };
 
   const handleReloadMessages = () => {
@@ -82,6 +91,11 @@ export default function ConversationPanel({
         onLoadOlder={chat.loadOlder}
         onMarkRead={chat.markRead}
         onRetry={handleRetryMessage}
+        onReply={
+          conversation?.viewerPermissions.canSend
+            ? handleReplyToMessage
+            : undefined
+        }
       />
 
       {error && (
@@ -104,6 +118,13 @@ export default function ConversationPanel({
           disabled={!conversation?.viewerPermissions.canSend}
           onChange={handleDraftChange}
           onSend={handleSendMessage}
+          images={chat.imageDrafts[conversationId] || []}
+          onAddImages={(files) => chat.addDraftImages(conversationId, files)}
+          onRemoveImage={(imageId) =>
+            chat.removeDraftImage(conversationId, imageId)
+          }
+          replyTo={chat.replyTargets[conversationId]}
+          onCancelReply={() => chat.setReplyTarget(conversationId, null)}
         />
       )}
     </section>

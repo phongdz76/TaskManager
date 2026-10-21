@@ -18,6 +18,46 @@ const renderComposer = (overrides = {}) => {
 };
 
 describe("MessageComposer", () => {
+  it("submits an image without requiring a caption", () => {
+    const { onSend } = renderComposer({
+      value: "",
+      images: [
+        {
+          id: "image-1",
+          previewUrl: "blob:preview",
+          file: { name: "photo.png" },
+        },
+      ],
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Gửi tin nhắn" }));
+    expect(onSend).toHaveBeenCalledWith("");
+  });
+
+  it("rejects an unsupported file before adding it", () => {
+    const onAddImages = vi.fn();
+    renderComposer({ onAddImages });
+    fireEvent.change(screen.getByLabelText("Chọn ảnh để gửi"), {
+      target: {
+        files: [new File(["document"], "file.svg", { type: "image/svg+xml" })],
+      },
+    });
+    expect(onAddImages).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Chỉ hỗ trợ ảnh JPG và PNG",
+    );
+  });
+
+  it("shows the selected quote and allows cancelling a reply", () => {
+    const onCancelReply = vi.fn();
+    renderComposer({
+      replyTo: { sender: { username: "Bob" }, text: "Original text" },
+      onCancelReply,
+    });
+    expect(screen.getByText("Đang trả lời Bob")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Hủy trả lời" }));
+    expect(onCancelReply).toHaveBeenCalledOnce();
+  });
+
   it("sends trimmed text with Enter", () => {
     const { onSend } = renderComposer();
 

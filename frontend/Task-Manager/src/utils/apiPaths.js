@@ -9,6 +9,8 @@ export const API_PATHS = {
     TASK: (taskId) => `/api/chat/tasks/${taskId}/conversation`,
     CONVERSATION: (id) => `/api/chat/conversations/${id}`,
     MESSAGES: (id) => `/api/chat/conversations/${id}/messages`,
+    IMAGE: (id, messageId, imageId) =>
+      `/api/chat/conversations/${id}/messages/${messageId}/images/${imageId}`,
     READ: (id) => `/api/chat/conversations/${id}/read`,
   },
   AUTH: {

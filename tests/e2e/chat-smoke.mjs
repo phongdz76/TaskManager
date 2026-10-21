@@ -8,6 +8,7 @@ import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { chromium } from "playwright-core";
 import mongoose from "../../backend/node_modules/mongoose/index.js";
 import jwt from "../../backend/node_modules/jsonwebtoken/index.js";
+import dotenv from "../../backend/node_modules/dotenv/lib/main.js";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const frontendDirectory = path.join(root, "frontend/Task-Manager");
@@ -29,6 +30,8 @@ assert.ok(
 fs.mkdirSync(outputDirectory, { recursive: true });
 
 let database, server, socketServer, vite, browser;
+let cloudinaryClient;
+const useCloudinary = process.env.CHAT_SMOKE_CLOUDINARY === "true";
 const errors = [];
 const frontendAddress = "http://127.0.0.1:5174";
 const wait = (milliseconds) =>
@@ -39,6 +42,20 @@ try {
   process.env.NODE_ENV = "test";
   process.env.JWT_SECRET = "chat-smoke-test-secret";
   process.env.CLIENT_URL = frontendAddress;
+  if (useCloudinary) {
+    const envPath = path.join(root, "backend/.env");
+    const configured = fs.existsSync(envPath)
+      ? dotenv.parse(fs.readFileSync(envPath))
+      : {};
+    for (const name of [
+      "CLOUDINARY_CLOUD_NAME",
+      "CLOUDINARY_API_KEY",
+      "CLOUDINARY_API_SECRET",
+    ]) {
+      process.env[name] ||= configured[name];
+      assert.ok(process.env[name], `Cloudinary smoke test requires ${name}`);
+    }
+  }
   database = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
   await mongoose.connect(database.getUri());
 
@@ -55,6 +72,10 @@ try {
     "../../backend/models/ConversationMember.js"
   );
   const { default: Message } = await import("../../backend/models/Message.js");
+  if (useCloudinary) {
+    cloudinaryClient = (await import("../../backend/config/cloudinary.js"))
+      .default;
+  }
   await Promise.all([
     Conversation.init(),
     ConversationMember.init(),
@@ -193,6 +214,74 @@ try {
     .getByText("Hello Alice, received in realtime", { exact: true })
     .waitFor();
   console.log("PASS: two accounts exchange direct messages and reload history");
+
+  await thread(alicePage)
+    .getByRole("button", {
+      name: "Trả lời tin nhắn: Hello Alice, received in realtime",
+      exact: true,
+    })
+    .dblclick();
+  await thread(alicePage)
+    .getByText("Đang trả lời Bob", { exact: true })
+    .waitFor();
+  await sendText(alicePage, "Reply to Bob's previous message");
+  await thread(bobPage)
+    .locator("blockquote")
+    .getByText("Hello Alice, received in realtime", { exact: true })
+    .waitFor();
+  const replyRecord = await Message.findOne({
+    text: "Reply to Bob's previous message",
+  });
+  assert.ok(replyRecord.replyToMessageId);
+  console.log("PASS: double-clicking a text bubble creates a persistent reply");
+
+  if (useCloudinary) {
+    const imageBuffer = fs.readFileSync(
+      path.join(frontendDirectory, "public/iconweb.png"),
+    );
+    await thread(alicePage)
+      .getByLabel("Chọn ảnh để gửi")
+      .setInputFiles({
+        name: "chat-smoke.png",
+        mimeType: "image/png",
+        buffer: imageBuffer,
+      });
+    const uploaded = alicePage.waitForResponse(
+      (response) =>
+        response.url().endsWith("/messages") &&
+        response.request().method() === "POST",
+      { timeout: 90000 },
+    );
+    await thread(alicePage)
+      .getByRole("button", { name: "Gửi tin nhắn", exact: true })
+      .click();
+    const uploadResponse = await uploaded;
+    assert.equal(
+      uploadResponse.status(),
+      201,
+      "Real Cloudinary upload must succeed",
+    );
+    const uploadedMessage = await uploadResponse.json();
+    assert.equal(uploadedMessage.type, "image");
+    const image = thread(bobPage).getByRole("img", {
+      name: "chat-smoke.png",
+      exact: true,
+    });
+    await image.waitFor();
+    await bobPage.waitForFunction(() =>
+      [...document.images].some(
+        (item) =>
+          item.alt === "chat-smoke.png" &&
+          item.complete &&
+          item.naturalWidth > 0,
+      ),
+    );
+    const stored = await Message.findById(uploadedMessage.id);
+    assert.ok(stored.images[0].publicId.startsWith("task-manager/chat/"));
+    console.log(
+      "PASS: an image is uploaded to real Cloudinary and displayed to the other account",
+    );
+  }
 
   await alicePage.goto(`${frontendAddress}/user/task-details/${task.id}`);
   await alicePage
@@ -401,10 +490,14 @@ try {
   });
   assert.equal(restored.status, 200);
   await thread(bobPage)
-    .filter({ has: bobPage.getByRole("heading", { name: task.title, exact: true }) })
+    .filter({
+      has: bobPage.getByRole("heading", { name: task.title, exact: true }),
+    })
     .getByText("Task reply from Bob", { exact: true })
     .waitFor();
-  console.log("PASS: assigning a member again restores chat access and history");
+  console.log(
+    "PASS: assigning a member again restores chat access and history",
+  );
 
   assert.deepEqual(errors, [], `Browser errors: ${errors.join("; ")}`);
   console.log(`Chat smoke test passed. Screenshots: ${outputDirectory}`);
@@ -427,6 +520,20 @@ try {
   await browser?.close();
   vite?.kill();
   if (socketServer) await new Promise((resolve) => socketServer.close(resolve));
+  if (cloudinaryClient && mongoose.connection.readyState === 1) {
+    const Message = mongoose.model("Message");
+    const messages = await Message.find({ "images.0": { $exists: true } });
+    for (const image of messages.flatMap((message) => message.images)) {
+      if (image.publicId.startsWith("task-manager/chat/")) {
+        await cloudinaryClient.uploader.destroy(image.publicId, {
+          type: "authenticated",
+          resource_type: "image",
+          invalidate: true,
+        });
+      }
+    }
+    console.log("Cloudinary smoke-test images cleaned up");
+  }
   await mongoose.disconnect();
   await database?.stop();
 }
