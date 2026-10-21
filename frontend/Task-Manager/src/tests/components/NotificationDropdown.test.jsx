@@ -25,7 +25,7 @@ describe("NotificationDropdown Component", () => {
   });
 
   it("should fetch and display unread count badge", async () => {
-    const { container } = render(<NotificationDropdown />);
+    render(<NotificationDropdown />);
     
     // Wait for the GET request to resolve
     await waitFor(() => {

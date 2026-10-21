@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "../../../test-utils.jsx";
+import { render, screen, waitFor, fireEvent } from "../../test-utils.jsx";
 import TeamMembersView from "@frontend/components/team/TeamMembersView.jsx";
 import axiosInstance from "@frontend/utils/axiosInstance.js";
 

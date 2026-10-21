@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "../../../test-utils.jsx";
+import { render, screen, fireEvent } from "../../test-utils.jsx";
 import NavBar from "@frontend/components/layouts/NavBar.jsx";
 
 // Mock dependencies

@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "../../../test-utils.jsx";
+import { render, screen, waitFor, fireEvent } from "../../test-utils.jsx";
 import EditTaskPage from "@frontend/components/tasks/EditTaskPage.jsx";
 import axiosInstance from "@frontend/utils/axiosInstance.js";
 
@@ -92,11 +92,8 @@ describe("EditTaskPage Component", () => {
     const titleInput = screen.getAllByRole("textbox").find(i => i.name === "title");
     fireEvent.change(titleInput, { target: { value: "Updated Task" } });
 
-    // Change Status
-    const statusSelect = screen.getByRole("combobox", { name: /status/i });
-    if(statusSelect) {
-        fireEvent.change(statusSelect, { target: { value: "In-Progress" } });
-    }
+    // Edit Task changes priority; status is managed in task details.
+    fireEvent.click(screen.getByRole("button", { name: "Low" }));
 
     // Submit
     const form = document.querySelector("form");
@@ -107,7 +104,9 @@ describe("EditTaskPage Component", () => {
         expect.stringContaining("/tasks/task1"),
         expect.objectContaining({
           title: "Updated Task",
-          status: "In-Progress", // If your form supports status update
+          priority: "Low",
+          assignedTo: ["user2"],
+          todoChecklist: [{ text: "Old step", completed: false }],
         })
       );
     });

@@ -92,8 +92,8 @@ describe("User Dashboard Page", () => {
     await waitFor(() => {
       expect(screen.getByText("Total Tasks")).toBeInTheDocument();
       expect(screen.getByText("5")).toBeInTheDocument();
-      expect(screen.getByText("1")).toBeInTheDocument(); // pending/completed/overdue
-      expect(screen.getByText("2")).toBeInTheDocument(); // in-progress
+      expect(screen.getAllByText("1").length).toBeGreaterThan(0); // pending/completed/overdue
+      expect(screen.getAllByText("2").length).toBeGreaterThan(0); // in-progress
     });
 
     // Check Recent Tasks Table

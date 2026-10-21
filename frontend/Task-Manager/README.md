@@ -43,7 +43,11 @@ npm run dev
 npm run build
 npm run preview
 npm run lint
+npm test
+npm run test:watch
 ```
+
+Frontend tests live in `src/tests/` and use Vitest with React Testing Library.
 
 ## App Routing
 

@@ -32,7 +32,7 @@ describe("Login Page", () => {
   });
 
   it("should call login API and redirect to user dashboard on successful login", async () => {
-    const mockData = { user: { role: "user", username: "test" }, token: "abc" };
+    const mockData = { _id: "1", role: "user", name: "test", email: "test@test.com", profileImageUrl: "img.jpg", token: "abc" };
     axiosInstance.post.mockResolvedValueOnce({ data: mockData });
     
     render(<Login />, { userState: mockUserContext });
@@ -46,14 +46,21 @@ describe("Login Page", () => {
         email: "test@test.com",
         password: "password123",
       });
-      expect(mockUpdateUser).toHaveBeenCalledWith(mockData.user, mockData.token);
+      const expectedUserData = {
+        _id: mockData._id,
+        name: mockData.name,
+        email: mockData.email,
+        role: mockData.role,
+        profileImageUrl: mockData.profileImageUrl
+      };
+      expect(mockUpdateUser).toHaveBeenCalledWith(expectedUserData, mockData.token);
     });
     
     // Redirect logic relies on window location / router mock, tested via PrivateRoute and App.jsx
   });
 
   it("should redirect to admin dashboard for admin users", async () => {
-    const mockData = { user: { role: "admin", username: "admin" }, token: "abc" };
+    const mockData = { _id: "2", role: "admin", name: "admin", email: "admin@test.com", profileImageUrl: "img.jpg", token: "abc" };
     axiosInstance.post.mockResolvedValueOnce({ data: mockData });
     
     render(<Login />, { userState: mockUserContext });
@@ -63,7 +70,14 @@ describe("Login Page", () => {
     fireEvent.submit(screen.getByRole("button", { name: /login/i }).closest("form"));
 
     await waitFor(() => {
-      expect(mockUpdateUser).toHaveBeenCalledWith(mockData.user, mockData.token);
+      const expectedUserData = {
+        _id: mockData._id,
+        name: mockData.name,
+        email: mockData.email,
+        role: mockData.role,
+        profileImageUrl: mockData.profileImageUrl
+      };
+      expect(mockUpdateUser).toHaveBeenCalledWith(expectedUserData, mockData.token);
     });
   });
 

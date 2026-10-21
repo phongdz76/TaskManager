@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "../../../test-utils.jsx";
+import { render, screen, fireEvent, within } from "../../test-utils.jsx";
 import TaskListTable from "@frontend/components/tasks/TaskListTable.jsx";
 
 const mockTasks = [
@@ -64,8 +64,11 @@ describe("TaskListTable Component", () => {
     // task2 has no checklist => No checklist (100%)
     expect(screen.getByText("No checklist (100%)")).toBeInTheDocument();
 
-    // Badges
-    expect(screen.queryByText("Overdue")).not.toBeInTheDocument(); // completed task is not overdue
+    // Only the unfinished task is overdue, even though both due dates are past.
+    const pendingRow = screen.getByText("Write unit tests").closest("tr");
+    const completedRow = screen.getByText("Deploy application").closest("tr");
+    expect(within(pendingRow).getByText("Overdue")).toBeInTheDocument();
+    expect(within(completedRow).queryByText("Overdue")).not.toBeInTheDocument();
   });
 
   it("should trigger callbacks when actions are clicked", () => {

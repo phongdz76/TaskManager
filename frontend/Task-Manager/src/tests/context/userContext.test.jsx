@@ -92,8 +92,9 @@ describe("UserContext", () => {
     expect(localStorage.getItem("token")).toBe("new-token");
   });
 
-  it("should clear user and token from localStorage via clearUser", () => {
+  it("should clear user and token from localStorage via clearUser", async () => {
     localStorage.setItem("token", "old-token");
+    axiosInstance.get.mockResolvedValueOnce({ data: { username: "old-user" } });
     
     render(
       <UserProvider>
@@ -101,8 +102,9 @@ describe("UserContext", () => {
       </UserProvider>
     );
 
+    const btn = await screen.findByText("Clear User");
     act(() => {
-      screen.getByText("Clear User").click();
+      btn.click();
     });
 
     expect(screen.getByTestId("user-info").textContent).toBe("No user");

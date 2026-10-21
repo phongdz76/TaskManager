@@ -185,3 +185,27 @@ git push origin dev
 
 - Khong commit file .env
 - Khong day key/secret/token that len repo
+
+## 12. Kiem thu va bao cao
+
+Cai dependencies trong `backend`, `frontend/Task-Manager` va `tests` truoc khi chay.
+
+Tu thu muc `tests`:
+
+```bash
+npm test                # Chay backend, sau do frontend
+npm run test:backend    # Chi backend
+npm run test:frontend   # Chuyen sang bo test trong frontend/Task-Manager
+```
+
+- Backend tests: `tests/backend-tests/` (MongoDB Memory Server, khong dung database that).
+- Frontend tests: `frontend/Task-Manager/src/tests/`.
+- Frontend build/lint: chay `npm run build` va `npm run lint` trong `frontend/Task-Manager`.
+
+Tu thu muc goc, xuat ket qua hai bo test ra CSV de mo bang Excel:
+
+```bash
+node generate_csv.js
+```
+
+File `Test_Results.csv`, cac bao cao JSON, coverage va cache duoc bo qua boi `.gitignore`.

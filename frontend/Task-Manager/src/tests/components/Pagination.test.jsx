@@ -12,16 +12,16 @@ describe("Pagination Component", () => {
   it("should display page numbers correctly", () => {
     render(<Pagination currentPage={2} totalPages={5} />);
     
-    expect(screen.getByText("1")).toBeInTheDocument();
-    expect(screen.getByText("2")).toBeInTheDocument();
-    expect(screen.getByText("5")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "2" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "5" })).toBeInTheDocument();
   });
 
   it("should call onPageChange when clicking a page number", () => {
     const handlePageChange = vi.fn();
     render(<Pagination currentPage={1} totalPages={3} onPageChange={handlePageChange} />);
     
-    fireEvent.click(screen.getByText("2"));
+    fireEvent.click(screen.getByRole("button", { name: "2" }));
     expect(handlePageChange).toHaveBeenCalledWith(2);
   });
 
