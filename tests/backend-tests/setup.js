@@ -1,4 +1,4 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "mongodb-memory-server";
 import mongoose from "mongoose";
 import { beforeAll, afterEach, afterAll } from "vitest";
 
@@ -26,7 +26,7 @@ beforeAll(async () => {
   process.env.EMAIL_USER = "test@example.com";
   process.env.EMAIL_PASS = "test-password";
 
-  mongoServer = await MongoMemoryServer.create();
+  mongoServer = await MongoMemoryReplSet.create({ replSet: { count: 1, storageEngine: "wiredTiger" } });
   const uri = mongoServer.getUri();
 
   // Disconnect any existing connection first

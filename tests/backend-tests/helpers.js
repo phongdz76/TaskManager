@@ -3,33 +3,7 @@ import Task from "../../backend/models/Task.js";
 import Notification from "../../backend/models/Notification.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import express from "express";
-import cors from "cors";
-import authRoutes from "../../backend/routes/authRoutes.js";
-import userRoutes from "../../backend/routes/userRoutes.js";
-import taskRoutes from "../../backend/routes/taskRoutes.js";
-import reportRoutes from "../../backend/routes/reportRoutes.js";
-import notificationRoutes from "../../backend/routes/notificationRoutes.js";
-import uploadRoutes from "../../backend/routes/uploadRoutes.js";
-
-/**
- * Create a fully configured Express app for testing.
- * Mirrors server.js without calling listen().
- */
-export function createApp() {
-  const app = express();
-  app.use(cors());
-  app.use(express.json());
-
-  app.use("/api/auth", authRoutes);
-  app.use("/api/users", userRoutes);
-  app.use("/api/tasks", taskRoutes);
-  app.use("/api/reports", reportRoutes);
-  app.use("/api/notifications", notificationRoutes);
-  app.use("/api/upload", uploadRoutes);
-
-  return app;
-}
+export { createApp } from "../../backend/server.js";
 
 /**
  * Create a test user directly in the database.

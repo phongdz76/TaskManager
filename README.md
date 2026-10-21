@@ -14,6 +14,7 @@ Task Manager la du an full-stack quan ly cong viec, gom backend API (Express + M
 - Notification trong he thong
 - Xuat bao cao Excel
 - Upload file/anh dinh kem cho task
+- Chat ca nhan, thao luan theo task va cua so chat noi
 
 ## 2. Cau truc du an
 
@@ -147,6 +148,7 @@ npm run dev
 - /api/reports
 - /api/notifications
 - /api/upload
+- /api/chat
 
 ## 9. Commit convention (Conventional Commits)
 
@@ -201,6 +203,35 @@ npm run test:frontend   # Chuyen sang bo test trong frontend/Task-Manager
 - Backend tests: `tests/backend-tests/` (MongoDB Memory Server, khong dung database that).
 - Frontend tests: `frontend/Task-Manager/src/tests/`.
 - Frontend build/lint: chay `npm run build` va `npm run lint` trong `frontend/Task-Manager`.
+
+## 13. Su dung chat
+
+Backend van khoi chay tu `backend/server.js`: `npm run dev` (mac dinh port 8000).
+Frontend: `npm run dev` trong `frontend/Task-Manager`, sau do mo http://localhost:5173.
+
+- Dang nhap va chon **Chat** trong menu. **Cuoc tro chuyen moi** mo danh ba de chat 1-1.
+- Trong **Team Members**, bam **Nhan tin** de mo chat nhanh.
+- Trong chi tiet task, bam **Mo thao luan** de trao doi cung nguoi tao/nguoi duoc giao.
+- Nut chat o goc duoi ben phai mo danh sach chat nhanh; cua so noi giu ban nhap khi doi trang.
+
+Chat luu tin bang MongoDB transaction, can Atlas hoac MongoDB replica set. MongoDB standalone khong ho tro gui tin chat.
+`CLIENT_URL` trong backend phai chua origin cua frontend; nhieu origin cach nhau bang dau phay.
+Mau cau hinh frontend nam o `frontend/Task-Manager/.env.example`.
+
+Socket.IO va REST dung chung HTTP server khi chay Node. Neu chi chay REST tren Vercel,
+dat `VITE_CHAT_REALTIME=false` de dong bo moi 15 giay, hoac cau hinh `VITE_CHAT_SOCKET_URL`
+tro den Node server chay Socket.IO cung database. Khi chay nhieu Node instance, dat
+`CHAT_SOCKET_ADAPTER=mongo` tren tat ca instance de dong bo su kien va thu hoi quyen.
+
+Kiem thu trinh duyet voi hai tai khoan, dung database replica set tam rieng biet:
+
+```bash
+cd tests
+npm run test:chat:e2e
+```
+
+Can Chrome/Edge da cai (hoac dat `CHROME_PATH`); khong can tai browser moi.
+Anh kiem tra luu trong `.cache/chat-smoke/`. Kiem thu nay khong dung database trong `backend/.env`.
 
 Tu thu muc goc, xuat ket qua hai bo test ra CSV de mo bang Excel:
 

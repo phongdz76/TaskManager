@@ -1,4 +1,5 @@
 import Task from "../models/Task.js";
+import { syncTaskChat } from "../services/chatLifecycleService.js";
 import User from "../models/User.js";
 import mongoose from "mongoose";
 import { createNotification } from "./notificationController.js";
@@ -716,6 +717,7 @@ export const updateTask = async (req, res) => {
     }
 
     const updatedTask = await task.save();
+    await syncTaskChat(task._id);
 
     // Create notifications for update
     await createNotification(
@@ -770,6 +772,7 @@ export const deleteTask = async (req, res) => {
     }
 
     await Task.findByIdAndDelete(req.params.id);
+    await syncTaskChat(req.params.id);
 
     await createNotification(
       req.user._id,
@@ -869,6 +872,7 @@ export const updateTaskStatus = async (req, res) => {
     }
 
     await task.save();
+    await syncTaskChat(task._id);
 
     const notifyUsers = [
       ...new Set([
@@ -954,6 +958,7 @@ export const updateTaskChecklist = async (req, res) => {
       task.status = "Pending";
     }
     await task.save();
+    await syncTaskChat(task._id);
 
     const notifyUsers = [
       ...new Set([

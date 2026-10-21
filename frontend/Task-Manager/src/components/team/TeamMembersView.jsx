@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { FaSearch, FaSpinner, FaUser } from "react-icons/fa";
 import DashboardLayout from "../layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
@@ -9,6 +9,9 @@ import useUserAuth from "../../hooks/useUserAuth";
 import ReportDownloadButton from "../ReportDownloadButton";
 import PageContainer from "../common/PageContainer";
 import PageLoader from "../common/PageLoader";
+import useChat from "../../hooks/useChat";
+import { useNavigate } from "react-router-dom";
+import { UserContext } from "../../context/userContext";
 
 const StatItem = ({ label, value, valueClass }) => (
   <div className="bg-gray-50 dark:bg-slate-900/50 rounded-lg px-3 py-2 border border-gray-100 dark:border-slate-700">
@@ -46,10 +49,37 @@ const PAGE_LIMIT = 10;
 export default function TeamMembersView({ activeMenu, subtitle }) {
   useUserAuth();
 
+  const { user } = useContext(UserContext);
+  const chat = useChat();
+  const navigate = useNavigate();
+
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [openingChat, setOpeningChat] = useState(null);
+
+  const handleMessageMember = async (memberId) => {
+    setOpeningChat(memberId);
+
+    try {
+      const conversation = await chat.openDirect(memberId);
+      if (!conversation) return;
+
+      if (window.innerWidth < 768) {
+        const prefix = user?.role === "admin" ? "/admin" : "/user";
+        navigate(`${prefix}/chat?conversation=${conversation.id}`);
+      } else {
+        chat.openWindow(conversation.id);
+      }
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Không thể mở cuộc trò chuyện.",
+      );
+    } finally {
+      setOpeningChat(null);
+    }
+  };
 
   const fetchMembers = useCallback(async () => {
     setLoading(true);
@@ -201,6 +231,16 @@ export default function TeamMembersView({ activeMenu, subtitle }) {
                       valueClass="text-emerald-600 dark:text-emerald-400"
                     />
                   </div>
+                  {chat && member._id !== (user?._id || user?.id) && (
+                    <button
+                      type="button"
+                      disabled={openingChat !== null}
+                      onClick={() => handleMessageMember(member._id)}
+                      className="mt-4 w-full rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-100 disabled:opacity-50 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                    >
+                      {openingChat === member._id ? "Đang mở..." : "Nhắn tin"}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

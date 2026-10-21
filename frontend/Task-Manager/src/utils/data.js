@@ -7,6 +7,7 @@ import {
   LuListTodo,
   LuCircleUser,
   LuLogOut,
+  LuMessageCircle,
 } from "react-icons/lu";
 
 export const ADMIN_SIDE_MENU_DATA = [
@@ -39,6 +40,12 @@ export const ADMIN_SIDE_MENU_DATA = [
     label: "Team Members",
     icon: LuUsers,
     path: "/admin/team-members",
+  },
+  {
+    id: "chat",
+    label: "Chat",
+    icon: LuMessageCircle,
+    path: "/admin/chat",
   },
   {
     id: "06",
@@ -84,6 +91,12 @@ export const USER_SIDE_MENU_DATA = [
     label: "Team Members",
     icon: LuUsers,
     path: "/user/team-members",
+  },
+  {
+    id: "chat",
+    label: "Chat",
+    icon: LuMessageCircle,
+    path: "/user/chat",
   },
   {
     id: "05",
