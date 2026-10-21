@@ -15,9 +15,35 @@ export const buildChatUser = (user, id) =>
       }
     : { id: getIdString(id), username: "Tài khoản đã xóa", deleted: true };
 
+const buildReplyPreview = (reply, users, conversationId) => {
+  if (
+    !reply ||
+    getIdString(reply.conversationId) !== getIdString(conversationId)
+  )
+    return null;
+
+  return {
+    id: getIdString(reply),
+    sequence: reply.sequence,
+    type: reply.type || "text",
+    text: reply.text,
+    sender: buildChatUser(
+      users.get(getIdString(reply.senderId)),
+      reply.senderId,
+    ),
+  };
+};
+
 export async function buildMessageResponses(messages) {
+  const replyIds = messages
+    .map((message) => message.replyToMessageId)
+    .filter(Boolean);
+  const replies = await Message.find({ _id: { $in: replyIds } }).lean();
+  const replyMap = new Map(
+    replies.map((message) => [getIdString(message), message]),
+  );
   const users = await User.find({
-    _id: { $in: messages.map((m) => m.senderId) },
+    _id: { $in: [...messages, ...replies].map((message) => message.senderId) },
   })
     .select("username profileImageUrl role")
     .lean();
@@ -29,6 +55,20 @@ export async function buildMessageResponses(messages) {
     sequence: m.sequence,
     clientMessageId: m.clientMessageId,
     text: m.text,
+    type: m.type || "text",
+    images: (m.images || []).map((image) => ({
+      id: getIdString(image),
+      originalName: image.originalName,
+      format: image.format,
+      width: image.width,
+      height: image.height,
+      bytes: image.bytes,
+    })),
+    replyTo: buildReplyPreview(
+      replyMap.get(getIdString(m.replyToMessageId)),
+      byId,
+      m.conversationId,
+    ),
     createdAt: m.createdAt,
   }));
 }

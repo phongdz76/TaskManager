@@ -17,6 +17,11 @@ import {
   buildMessageResponses,
 } from "./chatResponseService.js";
 import { syncConversationMembers } from "./chatMembershipService.js";
+import {
+  storeChatImages,
+  deleteChatImages,
+  validateChatImageFiles,
+} from "./chatImageService.js";
 
 export async function withChatTransaction(work) {
   const session = await mongoose.startSession();
@@ -86,11 +91,12 @@ export async function openConversation(type, targetId, viewerId) {
   return (await buildConversationResponses([result], viewerId))[0];
 }
 
-export async function sendMessage(conversationId, viewerId, body) {
+export async function sendMessage(conversationId, viewerId, body, files = []) {
+  const text = body.text === undefined ? "" : body.text;
   if (
-    typeof body.text !== "string" ||
-    !body.text.trim() ||
-    body.text.trim().length > 4000
+    typeof text !== "string" ||
+    (!text.trim() && !files.length) ||
+    text.trim().length > 4000
   )
     throw createChatError(400, "Text must contain 1–4000 characters");
   if (
@@ -98,44 +104,93 @@ export async function sendMessage(conversationId, viewerId, body) {
     !/^[\w-]{1,100}$/.test(body.clientMessageId)
   )
     throw createChatError(400, "Invalid clientMessageId");
-  const result = await withChatTransaction(async (session) => {
-    const access = await getConversationAccess(
-      conversationId,
-      viewerId,
-      session,
-      true,
-    );
-    const filter = {
-      conversationId,
-      senderId: viewerId,
-      clientMessageId: body.clientMessageId,
+
+  validateChatImageFiles(files);
+  const filter = {
+    conversationId,
+    senderId: viewerId,
+    clientMessageId: body.clientMessageId,
+  };
+  const access = await getConversationAccess(conversationId, viewerId);
+  const previous = await Message.findOne(filter);
+
+  if (previous) {
+    return {
+      message: (await buildMessageResponses([previous]))[0],
+      created: false,
     };
-    const existing = await Message.findOne(filter).session(session);
-    if (existing) return { message: existing, created: false };
-    if (!access.canSend)
-      throw createChatError(409, "Conversation is read-only");
-    const messageId = new mongoose.Types.ObjectId();
-    const conversation = await Conversation.findOneAndUpdate(
-      { _id: conversationId },
-      {
-        $inc: { lastMessageSeq: 1 },
-        $set: { lastMessageId: messageId, lastMessageAt: new Date() },
-      },
-      { returnDocument: "after", session },
-    );
-    const [message] = await Message.create(
-      [
+  }
+
+  if (!access.canSend) throw createChatError(409, "Conversation is read-only");
+
+  const replyToMessageId = body.replyToMessageId || null;
+  if (replyToMessageId) {
+    validateChatId(replyToMessageId);
+    if (!(await Message.exists({ _id: replyToMessageId, conversationId }))) {
+      throw createChatError(
+        400,
+        "Reply must reference a message in this conversation",
+      );
+    }
+  }
+
+  const images = await storeChatImages(conversationId, files);
+  let result;
+
+  try {
+    result = await withChatTransaction(async (session) => {
+      const access = await getConversationAccess(
+        conversationId,
+        viewerId,
+        session,
+        true,
+      );
+      const existing = await Message.findOne(filter).session(session);
+      if (existing) return { message: existing, created: false };
+      if (!access.canSend)
+        throw createChatError(409, "Conversation is read-only");
+      const messageId = new mongoose.Types.ObjectId();
+      const conversation = await Conversation.findOneAndUpdate(
+        { _id: conversationId },
         {
-          _id: messageId,
-          ...filter,
-          sequence: conversation.lastMessageSeq,
-          text: body.text.trim(),
+          $inc: { lastMessageSeq: 1 },
+          $set: { lastMessageId: messageId, lastMessageAt: new Date() },
         },
-      ],
-      { session },
-    );
-    return { message, created: true };
-  });
+        { returnDocument: "after", session },
+      );
+      const [message] = await Message.create(
+        [
+          {
+            _id: messageId,
+            ...filter,
+            sequence: conversation.lastMessageSeq,
+            text: text.trim(),
+            type: images.length ? "image" : "text",
+            images,
+            replyToMessageId,
+          },
+        ],
+        { session },
+      );
+      return { message, created: true };
+    });
+  } catch (error) {
+    // Check for a committed message before cleanup: a database timeout can leave
+    // the commit outcome uncertain. Never delete an image referenced by history.
+    if (images.length) {
+      try {
+        const referenced = await Message.exists({
+          "images.publicId": { $in: images.map((image) => image.publicId) },
+        });
+        if (!referenced) await deleteChatImages(images);
+      } catch {
+        console.error("Chat image cleanup deferred after database failure");
+      }
+    }
+    throw error;
+  }
+
+  if (!result.created && images.length) await deleteChatImages(images);
   return {
     message: (await buildMessageResponses([result.message]))[0],
     created: result.created,

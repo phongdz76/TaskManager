@@ -9,6 +9,7 @@ import {
   notifyConversation,
   notifyUser,
 } from "../realtime/chatEvents.js";
+import { getChatImage } from "../services/chatImageService.js";
 
 const sendChatError = (res, error) => {
   if (error.status) {
@@ -134,6 +135,7 @@ export const sendConversationMessage = async (req, res) => {
       req.params.id,
       req.user._id,
       req.body,
+      req.files || [],
     );
 
     res.status(created ? 201 : 200).json(message);
@@ -164,6 +166,26 @@ export const markConversationRead = async (req, res) => {
   }
 };
 
+// @desc    Read a private Cloudinary image after checking conversation access
+// @route   GET /api/chat/conversations/:id/messages/:messageId/images/:imageId
+// @access  Private (conversation participants)
+export const getConversationImage = async (req, res) => {
+  try {
+    const { data, contentType } = await getChatImage(
+      req.params.id,
+      req.params.messageId,
+      req.params.imageId,
+      req.user._id,
+    );
+
+    res.set("Cache-Control", "private, no-store");
+    res.set("X-Content-Type-Options", "nosniff");
+    res.type(contentType).send(data);
+  } catch (error) {
+    sendChatError(res, error);
+  }
+};
+
 export default {
   getChatUsers,
   openDirectConversation,
@@ -173,4 +195,5 @@ export default {
   getConversationMessages,
   sendConversationMessage,
   markConversationRead,
+  getConversationImage,
 };

@@ -1,5 +1,6 @@
 import express from "express";
 import { protect } from "../middlewares/authMiddleware.js";
+import { uploadChatImages } from "../middlewares/chatUploadMiddleware.js";
 import {
   chatRequestLimit,
   openConversationLimit,
@@ -14,6 +15,7 @@ import {
   getConversationMessages,
   sendConversationMessage,
   markConversationRead,
+  getConversationImage,
 } from "../controllers/chatController.js";
 
 const router = express.Router();
@@ -39,9 +41,14 @@ router.post(
 
 // Message history, sending and read state
 router.get("/conversations/:id/messages", getConversationMessages);
+router.get(
+  "/conversations/:id/messages/:messageId/images/:imageId",
+  getConversationImage,
+);
 router.post(
   "/conversations/:id/messages",
   sendMessageLimit,
+  uploadChatImages,
   sendConversationMessage,
 );
 router.put("/conversations/:id/read", markConversationRead);

@@ -1,5 +1,14 @@
 import mongoose from "mongoose";
 
+const imageSchema = new mongoose.Schema({
+  publicId: { type: String, required: true },
+  format: { type: String, enum: ["jpg", "png"], required: true },
+  originalName: { type: String, required: true },
+  width: { type: Number, required: true },
+  height: { type: Number, required: true },
+  bytes: { type: Number, required: true },
+});
+
 const messageSchema = new mongoose.Schema(
   {
     conversationId: {
@@ -14,8 +23,14 @@ const messageSchema = new mongoose.Schema(
     },
     clientMessageId: { type: String, required: true, maxlength: 100 },
     sequence: { type: Number, required: true },
-    type: { type: String, default: "text", enum: ["text"] },
-    text: { type: String, required: true, trim: true, maxlength: 4000 },
+    type: { type: String, default: "text", enum: ["text", "image"] },
+    text: { type: String, default: "", trim: true, maxlength: 4000 },
+    images: { type: [imageSchema], default: [] },
+    replyToMessageId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Message",
+      default: null,
+    },
   },
   { timestamps: true },
 );
