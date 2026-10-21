@@ -39,6 +39,9 @@ import PrivateRoute from "./routes/PrivateRoute";
 
 // Context
 import UserProvider, { UserContext } from "./context/userContext";
+import ChatProvider from "./context/chatContext";
+import ChatPage from "./pages/Chat/ChatPage";
+import FloatingChatDock from "./components/chat/FloatingChatDock";
 
 function StartupRedirect() {
   const { user, loading } = useContext(UserContext);
@@ -77,48 +80,68 @@ export default function App() {
       <div>
         <Toaster position="top-right" />
         <Router>
-          <Routes>
-            {/* Auth Routes */}
-            <Route path="/" element={<StartupRedirect />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<SignUp />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/oauth-callback" element={<OAuthCallback />} />
+          <ChatProvider>
+            <Routes>
+              {/* Auth Routes */}
+              <Route path="/" element={<StartupRedirect />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<SignUp />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/oauth-callback" element={<OAuthCallback />} />
 
-            {/* Admin Routes */}
-            <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/admin/create-task" element={<AdminCreateTask />} />
-              <Route path="/admin/tasks/create" element={<AdminCreateTask />} />
-              <Route path="/admin/tasks/edit/:id" element={<AdminEditTask />} />
-              <Route
-                path="/admin/task-details/:id"
-                element={<AdminViewTaskDetails />}
-              />
-              <Route path="/admin/tasks" element={<ManagerTask />} />
-              <Route path="/admin/team-members" element={<TeamMembers />} />
-              <Route path="/admin/users" element={<ManagerUser />} />
-              <Route path="/admin/all-user-tasks" element={<AllUserTasks />} />
-              <Route path="/admin/profile" element={<AdminProfile />} />
-            </Route>
+              {/* Admin Routes */}
+              <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route
+                  path="/admin/create-task"
+                  element={<AdminCreateTask />}
+                />
+                <Route
+                  path="/admin/tasks/create"
+                  element={<AdminCreateTask />}
+                />
+                <Route
+                  path="/admin/tasks/edit/:id"
+                  element={<AdminEditTask />}
+                />
+                <Route
+                  path="/admin/task-details/:id"
+                  element={<AdminViewTaskDetails />}
+                />
+                <Route path="/admin/tasks" element={<ManagerTask />} />
+                <Route path="/admin/team-members" element={<TeamMembers />} />
+                <Route path="/admin/users" element={<ManagerUser />} />
+                <Route
+                  path="/admin/all-user-tasks"
+                  element={<AllUserTasks />}
+                />
+                <Route path="/admin/profile" element={<AdminProfile />} />
+                <Route path="/admin/chat" element={<ChatPage />} />
+              </Route>
 
-            {/* User Routes */}
-            <Route element={<PrivateRoute allowedRoles={["user"]} />}>
-              <Route path="/user/dashboard" element={<UserDashboard />} />
-              <Route path="/user/create-task" element={<UserCreateTask />} />
-              <Route path="/user/tasks/edit/:id" element={<UserEditTask />} />
-              <Route path="/user/my-tasks" element={<MyTasks />} />
-              <Route path="/user/team-members" element={<UserTeamMembers />} />
-              <Route path="/user/profile" element={<UserProfile />} />
-              <Route
-                path="/user/task-details/:id"
-                element={<ViewTaskDetails />}
-              />
-            </Route>
+              {/* User Routes */}
+              <Route element={<PrivateRoute allowedRoles={["user"]} />}>
+                <Route path="/user/dashboard" element={<UserDashboard />} />
+                <Route path="/user/create-task" element={<UserCreateTask />} />
+                <Route path="/user/tasks/edit/:id" element={<UserEditTask />} />
+                <Route path="/user/my-tasks" element={<MyTasks />} />
+                <Route
+                  path="/user/team-members"
+                  element={<UserTeamMembers />}
+                />
+                <Route path="/user/profile" element={<UserProfile />} />
+                <Route path="/user/chat" element={<ChatPage />} />
+                <Route
+                  path="/user/task-details/:id"
+                  element={<ViewTaskDetails />}
+                />
+              </Route>
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+            <FloatingChatDock />
+          </ChatProvider>
         </Router>
       </div>
     </UserProvider>

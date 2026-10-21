@@ -18,6 +18,7 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import PageContainer from "../common/PageContainer";
+import TaskDiscussionPanel from "../chat/TaskDiscussionPanel";
 
 const isImageUrl = (url) => {
   if (!url) return false;
@@ -433,6 +434,8 @@ export default function TaskDetailsPage({
                   </p>
                 )}
               </div>
+
+              <TaskDiscussionPanel key={id} taskId={id} />
             </div>
 
             <div className="space-y-6">

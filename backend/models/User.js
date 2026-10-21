@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema(
   {
+    chatVersion: { type: Number, default: 0, select: false },
     username: {
       type: String,
       required: true,

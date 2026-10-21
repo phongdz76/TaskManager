@@ -13,6 +13,7 @@ const todoSchema = new mongoose.Schema({
 
 const taskSchema = new mongoose.Schema(
   {
+    chatVersion: { type: Number, default: 0, select: false },
     title: {
       type: String,
       required: true,

@@ -3,9 +3,11 @@ import { FaUser } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../context/userContext";
 import { ADMIN_SIDE_MENU_DATA, USER_SIDE_MENU_DATA } from "../../utils/data";
+import useChat from "../../hooks/useChat";
 
 export default function SideMenu({ activeMenu }) {
   const { user, clearUser } = useContext(UserContext);
+  const chat = useChat();
   const [sideMenuData, setSideMenuData] = useState([]);
   const [avatarLoadError, setAvatarLoadError] = useState(false);
   const navigate = useNavigate();
@@ -86,6 +88,11 @@ export default function SideMenu({ activeMenu }) {
           >
             <Icon className="text-lg" />
             <span>{item.label}</span>
+            {item.label === "Chat" && chat?.unreadTotal > 0 && (
+              <span aria-label={`${chat.unreadTotal} tin chưa đọc`} className="ml-auto rounded-full bg-blue-600 px-2 text-xs leading-5 text-white">
+                {chat.unreadTotal > 99 ? "99+" : chat.unreadTotal}
+              </span>
+            )}
           </button>
         );
       })}

@@ -2,6 +2,17 @@ export const BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export const API_PATHS = {
+  CHAT: {
+    USERS: "/api/chat/users",
+    CONVERSATIONS: "/api/chat/conversations",
+    DIRECT: "/api/chat/conversations/direct",
+    TASK: (taskId) => `/api/chat/tasks/${taskId}/conversation`,
+    CONVERSATION: (id) => `/api/chat/conversations/${id}`,
+    MESSAGES: (id) => `/api/chat/conversations/${id}/messages`,
+    IMAGE: (id, messageId, imageId) =>
+      `/api/chat/conversations/${id}/messages/${messageId}/images/${imageId}`,
+    READ: (id) => `/api/chat/conversations/${id}/read`,
+  },
   AUTH: {
     REGISTER: "/api/auth/register",
     LOGIN: "/api/auth/login",

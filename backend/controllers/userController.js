@@ -1,4 +1,5 @@
 import Task from "../models/Task.js";
+import { syncUserChats } from "../services/chatLifecycleService.js";
 import User from "../models/User.js";
 import mongoose from "mongoose";
 import { buildWorkspaceTeamMembersSummary } from "../utils/teamMembersSummary.js";
@@ -165,6 +166,7 @@ export const updateUserRole = async (req, res) => {
 
     user.role = role;
     await user.save();
+    await syncUserChats(user._id);
 
     if (role === "admin") {
       await createNotification(
@@ -206,12 +208,19 @@ export const deleteUser = async (req, res) => {
     }
 
     // Delete tasks created by this user, and unassign them from tasks they were assigned to
+    const affectedTasks = await Task.find({
+      $or: [{ createdBy: user._id }, { assignedTo: user._id }],
+    }).select("_id");
     await Task.deleteMany({ createdBy: user._id });
     await Task.updateMany(
       { assignedTo: user._id },
       { $pull: { assignedTo: user._id } },
     );
     await User.findByIdAndDelete(req.params.id);
+    await syncUserChats(user._id, {
+      deleted: true,
+      taskIds: affectedTasks.map((task) => task._id),
+    });
 
     await createNotification(
       req.user._id,

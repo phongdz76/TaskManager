@@ -39,11 +39,13 @@ pnpm-debug.log*
 .vercel/
 .sixth/
 
-# Local documents (existing repository convention)
+# Local documents and design prototypes (existing repository convention)
 docs/
+design/
 
 # OS and IDE metadata
 .DS_Store
 Thumbs.db
 Desktop.ini
 .idea/
+.vscode/
